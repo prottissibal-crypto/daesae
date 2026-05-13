@@ -1,10 +1,6 @@
-import 'react-notion-x/src/styles.css'
-import 'prismjs/themes/prism-tomorrow.css'
-import 'katex/dist/katex.min.css'
-
 export const metadata = {
   title: 'daesae',
-  description: 'Dynamic Notion renderer'
+  description: 'Dynamic Notion iframe'
 }
 
 export default function RootLayout({
@@ -14,7 +10,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body style={{ margin: 0 }}>{children}</body>
     </html>
   )
 }
