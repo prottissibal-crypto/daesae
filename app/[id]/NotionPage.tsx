@@ -8,14 +8,14 @@ import 'prismjs/themes/prism-tomorrow.css'
 import 'katex/dist/katex.min.css'
 
 const Code = dynamic(
-  () => import('react-notion-x/build/third-party/code').then(m => m.Code),
+  () => import('react-notion-x/build/third-party/code').then((m) => m.Code),
   { ssr: false }
 )
 
 const Collection = dynamic(
   () =>
     import('react-notion-x/build/third-party/collection').then(
-      m => m.Collection
+      (m) => m.Collection
     ),
   { ssr: false }
 )
@@ -23,13 +23,13 @@ const Collection = dynamic(
 const Equation = dynamic(
   () =>
     import('react-notion-x/build/third-party/equation').then(
-      m => m.Equation
+      (m) => m.Equation
     ),
   { ssr: false }
 )
 
 const Modal = dynamic(
-  () => import('react-notion-x/build/third-party/modal').then(m => m.Modal),
+  () => import('react-notion-x/build/third-party/modal').then((m) => m.Modal),
   { ssr: false }
 )
 
@@ -38,6 +38,7 @@ export default function NotionPage({ recordMap }: { recordMap: any }) {
     <NotionRenderer
       recordMap={recordMap}
       fullPage
+      darkMode={false}
       components={{
         Code,
         Collection,
