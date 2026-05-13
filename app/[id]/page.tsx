@@ -1,8 +1,12 @@
 import type { ExtendedRecordMap } from 'notion-types';
 import { NotionAPI } from 'notion-client';
+import { getBlockValue } from 'notion-utils';
 import NotionPage from './NotionPage';
 
 export const dynamic = 'force-dynamic';
+
+const MAX_ALIAS_RESOLVE_DEPTH = 2;
+const MAX_ALIAS_TARGETS_PER_DEPTH = 20;
 
 interface Params {
   id: string;
@@ -10,7 +14,101 @@ interface Params {
 
 async function fetchNotionPage(id: string): Promise<ExtendedRecordMap> {
   const notion = new NotionAPI();
-  return notion.getPage(id);
+  const recordMap = await notion.getPage(id);
+
+  await resolveAliasTargets(recordMap, notion);
+
+  return recordMap;
+}
+
+async function resolveAliasTargets(recordMap: ExtendedRecordMap, notion: NotionAPI) {
+  const fetchedPageIds = new Set<string>();
+
+  for (let depth = 0; depth < MAX_ALIAS_RESOLVE_DEPTH; depth += 1) {
+    const targetIds = getMissingAliasTargetIds(recordMap)
+      .filter((targetId) => !fetchedPageIds.has(targetId))
+      .slice(0, MAX_ALIAS_TARGETS_PER_DEPTH);
+
+    if (!targetIds.length) {
+      break;
+    }
+
+    const targetRecordMaps = await Promise.all(
+      targetIds.map(async (targetId) => {
+        fetchedPageIds.add(targetId);
+
+        try {
+          return await notion.getPage(targetId);
+        } catch (error) {
+          console.warn('Notion alias target fetch failed', targetId, error);
+          return null;
+        }
+      })
+    );
+
+    let didMerge = false;
+
+    for (const targetRecordMap of targetRecordMaps) {
+      if (!targetRecordMap) continue;
+
+      mergeRecordMaps(recordMap, targetRecordMap);
+      didMerge = true;
+    }
+
+    if (!didMerge) {
+      break;
+    }
+  }
+}
+
+function getMissingAliasTargetIds(recordMap: ExtendedRecordMap) {
+  const targetIds = new Set<string>();
+
+  for (const blockBox of Object.values(recordMap.block || {})) {
+    const block = getBlockValue(blockBox);
+
+    if (block?.type !== 'alias') continue;
+
+    const targetId = block.format?.alias_pointer?.id;
+
+    if (targetId && !recordMap.block[targetId]) {
+      targetIds.add(targetId);
+    }
+  }
+
+  return Array.from(targetIds);
+}
+
+function mergeRecordMaps(recordMap: ExtendedRecordMap, sourceRecordMap: ExtendedRecordMap) {
+  recordMap.block = {
+    ...sourceRecordMap.block,
+    ...recordMap.block
+  };
+  recordMap.collection = {
+    ...sourceRecordMap.collection,
+    ...recordMap.collection
+  };
+  recordMap.collection_view = {
+    ...sourceRecordMap.collection_view,
+    ...recordMap.collection_view
+  };
+  recordMap.notion_user = {
+    ...sourceRecordMap.notion_user,
+    ...recordMap.notion_user
+  };
+  recordMap.signed_urls = {
+    ...sourceRecordMap.signed_urls,
+    ...recordMap.signed_urls
+  };
+
+  for (const [collectionId, sourceCollectionQuery] of Object.entries(
+    sourceRecordMap.collection_query || {}
+  )) {
+    recordMap.collection_query[collectionId] = {
+      ...sourceCollectionQuery,
+      ...recordMap.collection_query[collectionId]
+    };
+  }
 }
 
 export default async function Page({ params }: { params: Params }) {
