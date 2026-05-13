@@ -1,347 +1,142 @@
-.page {
-  background: #f4f6f2;
-  color: #1d2528;
-  font-family:
-    Pretendard,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
-  min-height: 100vh;
-}
+import styles from './page.module.css';
 
-.hero {
-  background: #1d2528;
-  color: #fffaf2;
-  min-height: min(720px, 88vh);
-  overflow: hidden;
-  padding: 24px;
-  position: relative;
-}
-
-.hero::after {
-  background: url('/daesae-logo.webp') center / contain no-repeat;
-  bottom: 10%;
-  content: '';
-  height: 360px;
-  opacity: 0.08;
-  position: absolute;
-  right: max(16px, calc((100vw - 1120px) / 2));
-  width: min(420px, 70vw);
-}
-
-.heroInner,
-.section,
-.bandContent,
-.infoSection {
-  margin: 0 auto;
-  max-width: 1120px;
-  width: 100%;
-}
-
-.heroInner {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(min(720px, 88vh) - 48px);
-  position: relative;
-  z-index: 1;
-}
-
-.nav {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  min-height: 56px;
-}
-
-.logo {
-  height: auto;
-  max-width: min(152px, 48vw);
-  object-fit: contain;
-}
-
-.navLink,
-.primaryButton,
-.secondaryButton,
-.mapButton {
-  align-items: center;
-  border-radius: 6px;
-  display: inline-flex;
-  font-size: 15px;
-  font-weight: 700;
-  justify-content: center;
-  letter-spacing: 0;
-  min-height: 44px;
-  padding: 0 18px;
-  text-decoration: none;
-}
-
-.navLink,
-.secondaryButton {
-  border: 1px solid rgba(255, 250, 242, 0.38);
-  color: #fffaf2;
-}
-
-.heroContent {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  max-width: 760px;
-  padding: 72px 0 64px;
-}
-
-.eyebrow,
-.kicker {
-  color: #f27721;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-}
-
-.hero h1 {
-  font-size: 78px;
-  line-height: 1.02;
-  margin: 0;
-  max-width: 820px;
-}
-
-.lead {
-  color: rgba(255, 250, 242, 0.82);
-  font-size: 22px;
-  line-height: 1.55;
-  margin: 26px 0 0;
-  max-width: 680px;
-}
-
-.heroActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 34px;
-}
-
-.primaryButton,
-.mapButton {
-  background: #f27721;
-  color: #111;
-}
-
-.section {
-  padding: 84px 24px 72px;
-}
-
-.sectionHeader {
-  max-width: 680px;
-}
-
-.sectionHeader h2,
-.band h2,
-.infoCard h2,
-.notice h2 {
-  font-size: 40px;
-  line-height: 1.12;
-  margin: 0;
-}
-
-.sectionHeader p,
-.band p,
-.notice p {
-  color: #536064;
-  font-size: 17px;
-  line-height: 1.7;
-  margin: 16px 0 0;
-}
-
-.featureGrid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 38px;
-}
-
-.feature {
-  background: #fff;
-  border: 1px solid rgba(29, 37, 40, 0.12);
-  border-radius: 8px;
-  padding: 24px;
-}
-
-.feature h3 {
-  font-size: 18px;
-  margin: 0;
-}
-
-.feature p {
-  color: #536064;
-  font-size: 15px;
-  line-height: 1.65;
-  margin: 12px 0 0;
-}
-
-.band {
-  background: #fff;
-  border-bottom: 1px solid rgba(29, 37, 40, 0.1);
-  border-top: 1px solid rgba(29, 37, 40, 0.1);
-  padding: 72px 24px;
-}
-
-.bandContent {
-  align-items: start;
-  display: grid;
-  gap: 42px;
-  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
-}
-
-.programList {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.programList li {
-  background: #1d2528;
-  border-radius: 6px;
-  color: #fffaf2;
-  font-size: 16px;
-  font-weight: 700;
-  min-height: 54px;
-  padding: 16px 18px;
-}
-
-.infoSection {
-  align-items: stretch;
-  display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  padding: 72px 24px 86px;
-}
-
-.infoCard,
-.notice {
-  background: #fff;
-  border: 1px solid rgba(29, 37, 40, 0.12);
-  border-radius: 8px;
-  padding: 30px;
-}
-
-.infoList {
-  display: grid;
-  gap: 18px;
-  margin: 28px 0 0;
-}
-
-.infoList div {
-  border-top: 1px solid rgba(29, 37, 40, 0.12);
-  padding-top: 16px;
-}
-
-.infoList dt {
-  color: #6a7478;
-  font-size: 13px;
-  font-weight: 800;
-  margin-bottom: 6px;
-}
-
-.infoList dd {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.45;
-  margin: 0;
-}
-
-.infoList a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.notice {
-  align-content: center;
-  display: grid;
-}
-
-.mapButton {
-  justify-self: start;
-  margin-top: 28px;
-}
-
-@media (max-width: 860px) {
-  .hero {
-    min-height: 720px;
-    padding: 18px;
+const features = [
+  {
+    title: '학교별 내신 대비',
+    description: '도래울권 학교 흐름에 맞춰 시험 범위와 유형을 촘촘하게 관리합니다.'
+  },
+  {
+    title: '수준별 커리큘럼',
+    description: '초등부터 고등까지 현재 실력에 맞춘 반 편성과 단계별 학습을 운영합니다.'
+  },
+  {
+    title: '정기 테스트와 피드백',
+    description: '단어, 문법, 독해, 서술형을 반복 점검하며 약점을 빠르게 보완합니다.'
+  },
+  {
+    title: '개별 학습 관리',
+    description: '학생별 부족한 지점을 확인하고 필요한 학습 루틴을 함께 잡아갑니다.'
   }
+];
 
-  .heroInner {
-    min-height: calc(720px - 36px);
-  }
+const programs = ['초등 영어', '중등 내신', '고등 내신', '방학 특강', '서술형 대비', '정기 테스트'];
 
-  .featureGrid,
-  .bandContent,
-  .infoSection {
-    grid-template-columns: 1fr;
-  }
+export default function HomePage() {
+  return (
+    <main className={styles.page}>
+      <section className={styles.hero}>
+        <div className={styles.heroInner}>
+          <nav className={styles.nav} aria-label="대세영어학원">
+            <img
+              alt="대세영어학원"
+              className={styles.logo}
+              height="52"
+              src="/daesae-logo.webp"
+              width="152"
+            />
+            <a className={styles.navLink} href="tel:050803223733">
+              상담 문의
+            </a>
+          </nav>
 
-  .hero h1 {
-    font-size: 58px;
-  }
+          <div className={styles.heroContent}>
+            <p className={styles.eyebrow}>도래울 영어 내신 관리</p>
+            <h1>영어의 기준을 바꾸는 대세영어학원</h1>
+            <p className={styles.lead}>
+              체계적인 커리큘럼과 꼼꼼한 피드백으로 학생이 스스로 설명할 수 있는
+              영어 실력을 만들어갑니다.
+            </p>
+            <div className={styles.heroActions}>
+              <a className={styles.primaryButton} href="tel:050803223733">
+                전화 상담
+              </a>
+              <a
+                className={styles.secondaryButton}
+                href="https://naver.me/xCjBcZaU"
+                rel="noreferrer"
+                target="_blank"
+              >
+                위치 보기
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
 
-  .lead {
-    font-size: 20px;
-  }
+      <section className={styles.section} aria-labelledby="intro-title">
+        <div className={styles.sectionHeader}>
+          <p className={styles.kicker}>About</p>
+          <h2 id="intro-title">대세영어학원 도래울캠퍼스</h2>
+          <p>
+            영어를 외우는 과목으로만 두지 않고, 읽고 이해하고 설명하는 힘까지
+            연결합니다.
+          </p>
+        </div>
+        <div className={styles.featureGrid}>
+          {features.map((feature) => (
+            <article className={styles.feature} key={feature.title}>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-  .sectionHeader h2,
-  .band h2,
-  .infoCard h2,
-  .notice h2 {
-    font-size: 34px;
-  }
+      <section className={styles.band} aria-labelledby="program-title">
+        <div className={styles.bandContent}>
+          <div>
+            <p className={styles.kicker}>Class</p>
+            <h2 id="program-title">수업 안내</h2>
+            <p>
+              학년과 목표에 따라 내신, 어휘, 독해, 문법, 서술형 학습을 균형 있게
+              설계합니다.
+            </p>
+          </div>
+          <ul className={styles.programList}>
+            {programs.map((program) => (
+              <li key={program}>{program}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-  .section,
-  .band,
-  .infoSection {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-}
-
-@media (max-width: 560px) {
-  .hero h1 {
-    font-size: 44px;
-  }
-
-  .lead {
-    font-size: 18px;
-  }
-
-  .nav {
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .navLink {
-    font-size: 14px;
-    min-height: 40px;
-    padding: 0 13px;
-  }
-
-  .heroActions {
-    flex-direction: column;
-  }
-
-  .programList {
-    grid-template-columns: 1fr;
-  }
-
-  .primaryButton,
-  .secondaryButton,
-  .mapButton {
-    width: 100%;
-  }
+      <section className={styles.infoSection} aria-labelledby="contact-title">
+        <div className={styles.infoCard}>
+          <p className={styles.kicker}>Visit</p>
+          <h2 id="contact-title">문의 및 위치</h2>
+          <dl className={styles.infoList}>
+            <div>
+              <dt>주소</dt>
+              <dd>경기 고양시 덕양구 도래울로 42-5 4층</dd>
+            </div>
+            <div>
+              <dt>상담 전화</dt>
+              <dd>
+                <a href="tel:050803223733">0508-0322-3733</a>
+              </dd>
+            </div>
+            <div>
+              <dt>운영 시간</dt>
+              <dd>14:00 - 22:00</dd>
+            </div>
+          </dl>
+        </div>
+        <div className={styles.notice}>
+          <h2>입학 상담은 예약제로 진행됩니다.</h2>
+          <p>
+            학생의 현재 학습 상태와 목표를 먼저 확인한 뒤, 필요한 수업 방향을
+            안내합니다.
+          </p>
+          <a
+            className={styles.mapButton}
+            href="https://naver.me/xCjBcZaU"
+            rel="noreferrer"
+            target="_blank"
+          >
+            네이버 지도에서 보기
+          </a>
+        </div>
+      </section>
+    </main>
+  );
 }
