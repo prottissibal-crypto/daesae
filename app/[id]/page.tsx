@@ -1,7 +1,9 @@
 import { NotionAPI } from 'notion-client'
-import { NotionRenderer } from 'react-notion-x'
+import NotionPage from './NotionPage'
 
 const notion = new NotionAPI()
+
+export const dynamic = 'force-dynamic'
 
 export default async function Page({
   params
@@ -13,8 +15,8 @@ export default async function Page({
   const recordMap = await notion.getPage(id)
 
   return (
-    <main style={{ padding: 20 }}>
-      <NotionRenderer recordMap={recordMap} fullPage />
+    <main>
+      <NotionPage recordMap={recordMap} />
     </main>
   )
 }
