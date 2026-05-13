@@ -323,36 +323,8 @@ function CalendarCollectionView({
   return (
     <div className="notion-collection">
       {showTitle && (
-        <div className="notion-collection-header notion-collection-header-with-action">
+        <div className="notion-collection-header">
           <div className="notion-collection-header-title">{title}</div>
-
-          <a
-            aria-label="Instagram 바로가기"
-            className="notion-instagram-logo-button"
-            href="https://www.instagram.com/daese_english/"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <svg
-              aria-hidden="true"
-              fill="none"
-              height="18"
-              viewBox="0 0 24 24"
-              width="18"
-            >
-              <rect
-                height="16"
-                rx="5"
-                stroke="currentColor"
-                strokeWidth="2"
-                width="16"
-                x="4"
-                y="4"
-              />
-              <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="2" />
-              <circle cx="17" cy="7" fill="currentColor" r="1.2" />
-            </svg>
-          </a>
         </div>
       )}
 
@@ -434,36 +406,6 @@ function CalendarCollectionView({
       </div>
 
       <style jsx>{`
-        .notion-collection-header-with-action {
-          align-items: center;
-          display: flex;
-          gap: 10px;
-          justify-content: space-between;
-        }
-
-        .notion-instagram-logo-button {
-          align-items: center;
-          border: 1px solid var(--bg-color-2);
-          border-radius: 999px;
-          color: var(--fg-color);
-          display: inline-flex;
-          flex: 0 0 auto;
-          height: 34px;
-          justify-content: center;
-          text-decoration: none;
-          transition:
-            background 120ms ease,
-            border-color 120ms ease,
-            transform 120ms ease;
-          width: 34px;
-        }
-
-        .notion-instagram-logo-button:hover {
-          background: var(--bg-color-1);
-          border-color: var(--fg-color-5);
-          transform: translateY(-1px);
-        }
-
         .notion-calendar-fallback {
           max-width: 100%;
           min-width: 0;
