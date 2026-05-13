@@ -250,7 +250,7 @@ function CalendarCollectionView({
         </div>
 
         <div className="notion-calendar-grid">
-          {['일', '월', '화', '수', '목', '금', '토'].map((weekday) => (
+          {['\uc77c', '\uc6d4', '\ud654', '\uc218', '\ubaa9', '\uae08', '\ud1a0'].map((weekday) => (
             <div className="notion-calendar-weekday" key={weekday}>
               {weekday}
             </div>
@@ -285,7 +285,9 @@ function CalendarCollectionView({
 
       <style jsx>{`
         .notion-calendar-fallback {
-          overflow-x: auto;
+          max-width: 100%;
+          min-width: 0;
+          overflow: hidden;
           padding: 8px 0 24px;
           width: 100%;
         }
@@ -300,10 +302,10 @@ function CalendarCollectionView({
 
         .notion-calendar-toolbar button {
           align-items: center;
-          background: transparent;
-          border: 1px solid rgba(55, 53, 47, 0.16);
+          background: var(--bg-color);
+          border: 1px solid var(--bg-color-2);
           border-radius: 4px;
-          color: inherit;
+          color: var(--fg-color);
           cursor: pointer;
           display: inline-flex;
           height: 30px;
@@ -312,35 +314,42 @@ function CalendarCollectionView({
         }
 
         .notion-calendar-grid {
-          border-left: 1px solid rgba(55, 53, 47, 0.16);
-          border-top: 1px solid rgba(55, 53, 47, 0.16);
+          border-left: 1px solid var(--bg-color-2);
+          border-top: 1px solid var(--bg-color-2);
           display: grid;
-          grid-template-columns: repeat(7, minmax(112px, 1fr));
-          min-width: 784px;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          max-width: 100%;
+          min-width: 0;
+          width: 100%;
         }
 
         .notion-calendar-weekday,
         .notion-calendar-day {
-          border-bottom: 1px solid rgba(55, 53, 47, 0.16);
-          border-right: 1px solid rgba(55, 53, 47, 0.16);
+          border-bottom: 1px solid var(--bg-color-2);
+          border-right: 1px solid var(--bg-color-2);
+          min-width: 0;
         }
 
         .notion-calendar-weekday {
-          color: rgba(55, 53, 47, 0.65);
+          color: var(--fg-color-5);
           font-size: 13px;
           font-weight: 500;
-          padding: 8px;
+          overflow: hidden;
+          padding: 8px 4px;
           text-align: center;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .notion-calendar-day {
-          min-height: 112px;
-          padding: 7px;
+          min-height: clamp(76px, 13vw, 112px);
+          overflow: hidden;
+          padding: clamp(3px, 0.9vw, 7px);
         }
 
         .notion-calendar-day-muted {
-          background: rgba(55, 53, 47, 0.03);
-          color: rgba(55, 53, 47, 0.45);
+          background: var(--bg-color-1);
+          color: var(--fg-color-5);
         }
 
         .notion-calendar-day-number {
@@ -350,18 +359,42 @@ function CalendarCollectionView({
         }
 
         .notion-calendar-event {
-          background: rgba(46, 170, 220, 0.14);
+          background: var(--bg-color-2);
           border-radius: 4px;
-          color: inherit;
-          display: block;
-          font-size: 12px;
+          color: var(--fg-color);
+          display: -webkit-box;
+          font-size: clamp(10px, 1.5vw, 12px);
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
           line-height: 1.35;
           margin-top: 4px;
           overflow: hidden;
-          padding: 4px 6px;
+          padding: 3px 5px;
           text-decoration: none;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          word-break: break-word;
+        }
+
+        @media (max-width: 520px) {
+          .notion-calendar-toolbar {
+            gap: 8px;
+            margin: 4px 0 12px;
+          }
+
+          .notion-calendar-weekday {
+            font-size: 11px;
+            padding: 6px 2px;
+          }
+
+          .notion-calendar-day-number {
+            font-size: 11px;
+            line-height: 15px;
+          }
+
+          .notion-calendar-event {
+            border-radius: 3px;
+            margin-top: 3px;
+            padding: 2px 3px;
+          }
         }
       `}</style>
     </div>
@@ -547,7 +580,7 @@ function toDateKey(date: Date) {
 }
 
 function formatMonth(date: Date) {
-  return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+  return `${date.getFullYear()}\ub144 ${date.getMonth() + 1}\uc6d4`;
 }
 
 interface NotionPageProps {
@@ -555,10 +588,51 @@ interface NotionPageProps {
 }
 
 export default function NotionPage({ recordMap }: NotionPageProps) {
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const storedTheme = window.localStorage.getItem('daesae-theme');
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      setDarkMode(storedTheme === 'dark');
+    } else {
+      setDarkMode(media.matches);
+    }
+
+    const onChange = (event: MediaQueryListEvent) => {
+      if (!window.localStorage.getItem('daesae-theme')) {
+        setDarkMode(event.matches);
+      }
+    };
+
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light';
+  }, [darkMode]);
+
+  const onToggleTheme = () => {
+    const nextDarkMode = !darkMode;
+    setDarkMode(nextDarkMode);
+    window.localStorage.setItem('daesae-theme', nextDarkMode ? 'dark' : 'light');
+  };
+
   return (
-    <div style={{ width: '100%' }}>
+    <div className={`notion-viewer ${darkMode ? 'dark-mode' : ''}`}>
+      <button
+        aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+        className="theme-toggle"
+        onClick={onToggleTheme}
+        type="button"
+      >
+        {darkMode ? 'Light' : 'Dark'}
+      </button>
       <NotionRenderer
         recordMap={recordMap}
+        darkMode={darkMode}
         fullPage
         mapPageUrl={(pageId) => `/${pageId.replace(/-/g, '')}`}
         components={{
