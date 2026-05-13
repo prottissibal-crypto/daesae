@@ -576,7 +576,8 @@ function CalendarCollectionView({
   );
 }
 
-type CollectionDataWithGroupResults = CollectionQueryResult & Record<string, unknown>;
+type CollectionDataWithGroupResults = CollectionQueryResult &
+  Record<string, CollectionQueryResult | undefined>;
 
 interface CollectionGroupFormat {
   hidden?: boolean;
