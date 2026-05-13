@@ -84,6 +84,45 @@ main {
   background: var(--bg-color-0, rgba(55, 53, 47, 0.08));
 }
 
+.notion-viewer.dark-mode .notion-button,
+.notion-viewer.dark-mode .notion-button-inner {
+  border-color: var(--bg-color-2) !important;
+  color: var(--fg-color) !important;
+}
+
+.notion-viewer.dark-mode .notion-button:hover {
+  background-color: var(--bg-color-0) !important;
+}
+
+.notion-viewer.dark-mode .notion-button:active {
+  background-color: var(--bg-color-1) !important;
+}
+
+.notion-viewer.dark-mode .notion-collection-view-type-icon {
+  fill: var(--fg-color-5);
+}
+
+.notion-viewer.dark-mode [style*='color: #000'],
+.notion-viewer.dark-mode [style*='color:#000'],
+.notion-viewer.dark-mode [style*='color: black'],
+.notion-viewer.dark-mode [style*='color:black'],
+.notion-viewer.dark-mode [style*='color: rgb(0, 0, 0)'],
+.notion-viewer.dark-mode [style*='color:rgb(0, 0, 0)'],
+.notion-viewer.dark-mode [style*='color: rgb(55, 53, 47)'],
+.notion-viewer.dark-mode [style*='color:rgb(55, 53, 47)'],
+.notion-viewer.dark-mode [style*='color: rgba(55, 53, 47'],
+.notion-viewer.dark-mode [style*='color:rgba(55, 53, 47'],
+.notion-viewer.dark-mode [style*='color: #37352f'],
+.notion-viewer.dark-mode [style*='color:#37352f'] {
+  color: var(--fg-color) !important;
+}
+
+.notion-viewer.dark-mode .notion-code,
+.notion-viewer.dark-mode .notion-code code,
+.notion-viewer.dark-mode .notion-code pre {
+  color: var(--fg-color);
+}
+
 @supports not (overflow: clip) {
   .notion-viewer {
     overflow-x: hidden;

@@ -236,6 +236,21 @@ function CalendarCollectionView({
       viewId: collectionView.id
     });
   };
+  const [todayKey, setTodayKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updateToday = () => setTodayKey(getCurrentDateKey());
+
+    updateToday();
+    const interval = window.setInterval(updateToday, 60000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const goToToday = () => {
+    const currentDateKey = todayKey || getCurrentDateKey();
+    setVisibleMonthKey(currentDateKey.slice(0, 7));
+  };
+
   const days = useMemo(() => getCalendarGridDays(visibleMonthKey), [visibleMonthKey]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
   const title = getTextContent(collection.name).trim();
@@ -262,6 +277,14 @@ function CalendarCollectionView({
           >
             &lt;
           </button>
+          <button
+            aria-label="Go to today"
+            className="notion-calendar-today-button"
+            onClick={goToToday}
+            type="button"
+          >
+            {'\uc624\ub298'}
+          </button>
           <strong>{formatMonth(visibleMonthKey)}</strong>
           <button
             aria-label="Next month"
@@ -286,7 +309,8 @@ function CalendarCollectionView({
               <div
                 className={[
                   'notion-calendar-day',
-                  day.isCurrentMonth ? '' : 'notion-calendar-day-muted'
+                  day.isCurrentMonth ? '' : 'notion-calendar-day-muted',
+                  day.key === todayKey ? 'notion-calendar-day-today' : ''
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -337,6 +361,12 @@ function CalendarCollectionView({
           width: 30px;
         }
 
+        .notion-calendar-toolbar .notion-calendar-today-button {
+          font-weight: 500;
+          padding: 0 10px;
+          width: auto;
+        }
+
         .notion-calendar-grid {
           border-left: 1px solid var(--bg-color-2);
           border-top: 1px solid var(--bg-color-2);
@@ -375,10 +405,28 @@ function CalendarCollectionView({
           color: var(--fg-color-5);
         }
 
+        .notion-calendar-day-today {
+          background: rgba(46, 170, 220, 0.08);
+          box-shadow: inset 0 0 0 1px var(--notion-blue);
+        }
+
         .notion-calendar-day-number {
           font-size: 12px;
           line-height: 18px;
           margin-bottom: 4px;
+        }
+
+        .notion-calendar-day-today .notion-calendar-day-number {
+          align-items: center;
+          background: var(--notion-blue);
+          border-radius: 999px;
+          color: #fff;
+          display: inline-flex;
+          font-weight: 600;
+          height: 22px;
+          justify-content: center;
+          margin-bottom: 2px;
+          width: 22px;
         }
 
         .notion-calendar-event {
@@ -425,8 +473,8 @@ function getCalendarEvents(
     const date = getBlockDate(block, collection, datePropertyId);
     if (!date) continue;
 
-      const href =
-        ctx.mapPageUrl?.(block.id, ctx.recordMap) || `/${block.id.replace(/-/g, '')}`;
+    const href =
+      ctx.mapPageUrl?.(block.id, ctx.recordMap) || `/${block.id.replace(/-/g, '')}`;
 
     events.push({
       id: block.id,
@@ -566,8 +614,7 @@ function getEventDateKeys(event: CalendarEvent) {
 }
 
 function getCurrentMonthKey() {
-  const now = new Date();
-  return createMonthKey(now.getFullYear(), now.getMonth() + 1);
+  return getCurrentDateKey().slice(0, 7);
 }
 
 function addMonths(monthKey: string, amount: number) {
@@ -582,6 +629,11 @@ function createMonthKey(year: number, month: number) {
 
 function createDateKey(year: number, month: number, day: number) {
   return `${createMonthKey(year, month)}-${String(day).padStart(2, '0')}`;
+}
+
+function getCurrentDateKey() {
+  const now = new Date();
+  return createDateKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
 function getUtcWeekday(year: number, month: number, day: number) {
