@@ -1,22 +1,32 @@
-import { NotionAPI } from 'notion-client'
-import NotionPage from './NotionPage'
-
-const notion = new NotionAPI()
-
 export const dynamic = 'force-dynamic'
 
-export default async function Page({
+export default function Page({
   params
 }: {
   params: { id: string }
 }) {
-  const id = params.id.replace(/-/g, '')
+  const id = params.id
 
-  const recordMap = await notion.getPage(id)
+  const url = `https://www.notion.so/${id}`
 
   return (
-    <main>
-      <NotionPage recordMap={recordMap} />
+    <main
+      style={{
+        width: '100%',
+        height: '100vh',
+        margin: 0,
+        padding: 0
+      }}
+    >
+      <iframe
+        src={url}
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 'none'
+        }}
+        allowFullScreen
+      />
     </main>
   )
 }
