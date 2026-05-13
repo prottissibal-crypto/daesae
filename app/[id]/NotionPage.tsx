@@ -308,8 +308,11 @@ function CalendarCollectionView({
         .notion-calendar-fallback {
           max-width: 100%;
           min-width: 0;
-          overflow: hidden;
+          overflow-x: auto;
+          overflow-y: hidden;
           padding: 8px 0 24px;
+          scrollbar-gutter: stable;
+          -webkit-overflow-scrolling: touch;
           width: 100%;
         }
 
@@ -338,9 +341,8 @@ function CalendarCollectionView({
           border-left: 1px solid var(--bg-color-2);
           border-top: 1px solid var(--bg-color-2);
           display: grid;
-          grid-template-columns: repeat(7, minmax(0, 1fr));
-          max-width: 100%;
-          min-width: 0;
+          grid-template-columns: repeat(7, minmax(112px, 1fr));
+          min-width: 784px;
           width: 100%;
         }
 
@@ -363,9 +365,9 @@ function CalendarCollectionView({
         }
 
         .notion-calendar-day {
-          min-height: clamp(76px, 13vw, 112px);
+          min-height: 112px;
           overflow: hidden;
-          padding: clamp(3px, 0.9vw, 7px);
+          padding: 7px;
         }
 
         .notion-calendar-day-muted {
@@ -395,26 +397,9 @@ function CalendarCollectionView({
           word-break: break-word;
         }
 
-        @media (max-width: 520px) {
-          .notion-calendar-toolbar {
-            gap: 8px;
-            margin: 4px 0 12px;
-          }
-
-          .notion-calendar-weekday {
-            font-size: 11px;
-            padding: 6px 2px;
-          }
-
-          .notion-calendar-day-number {
-            font-size: 11px;
-            line-height: 15px;
-          }
-
-          .notion-calendar-event {
-            border-radius: 3px;
-            margin-top: 3px;
-            padding: 2px 3px;
+        @media (max-width: 860px) {
+          .notion-calendar-grid {
+            width: 784px;
           }
         }
       `}</style>
@@ -536,11 +521,9 @@ function getInitialMonthKey(events: CalendarEvent[]) {
 function getCalendarGridDays(monthKey: string): CalendarDay[] {
   const { month, year } = parseMonthKey(monthKey);
   const firstWeekday = getUtcWeekday(year, month, 1);
-  const daysInMonth = getDaysInMonth(year, month);
-  const weekCount = Math.ceil((firstWeekday + daysInMonth) / 7);
   const gridStart = Date.UTC(year, month - 1, 1 - firstWeekday);
 
-  return Array.from({ length: weekCount * 7 }, (_, index) => {
+  return Array.from({ length: 42 }, (_, index) => {
     const date = new Date(gridStart + index * 86400000);
     const dateYear = date.getUTCFullYear();
     const dateMonth = date.getUTCMonth() + 1;
@@ -603,10 +586,6 @@ function createDateKey(year: number, month: number, day: number) {
 
 function getUtcWeekday(year: number, month: number, day: number) {
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-}
-
-function getDaysInMonth(year: number, month: number) {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
 function isDateKey(value: string) {
