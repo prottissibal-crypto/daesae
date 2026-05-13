@@ -1,16 +1,17 @@
+import type { ReactNode } from 'react';
+import 'react-notion-x/src/styles.css';
+import 'prismjs/themes/prism.css';
+import 'katex/dist/katex.min.css';
+
 export const metadata = {
   title: 'daesae',
-  description: 'Dynamic Notion iframe'
-}
+  description: 'Notion page viewer using Next.js and react-notion-x'
+};
 
-export default function RootLayout({
-  children
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
-      <body style={{ margin: 0 }}>{children}</body>
+      <body>{children}</body>
     </html>
-  )
+  );
 }
