@@ -138,6 +138,37 @@ function Collection(props: CollectionComponentProps) {
     setSelectedViewId(viewId);
     window.localStorage.setItem(storageKey, viewId);
   };
+  const rendererCollectionData = useMemo(
+    () =>
+      collection && collectionView && collectionData
+        ? normalizeGroupedCollectionData(collection, collectionView, collectionData, recordMap)
+        : collectionData,
+    [collection, collectionData, collectionView, recordMap]
+  );
+  const rendererCtx = useMemo(() => {
+    if (
+      !collectionId ||
+      !selectedViewId ||
+      !rendererCollectionData ||
+      rendererCollectionData === collectionData
+    ) {
+      return ctx;
+    }
+
+    return {
+      ...ctx,
+      recordMap: {
+        ...recordMap,
+        collection_query: {
+          ...recordMap.collection_query,
+          [collectionId]: {
+            ...recordMap.collection_query[collectionId],
+            [selectedViewId]: rendererCollectionData
+          }
+        }
+      }
+    };
+  }, [collectionData, collectionId, ctx, recordMap, rendererCollectionData, selectedViewId]);
 
   if (collectionView?.type !== 'calendar' || !collection || !collectionData) {
     return (
@@ -150,6 +181,7 @@ function Collection(props: CollectionComponentProps) {
         />
         <OriginalCollection
           {...props}
+          ctx={rendererCtx}
           block={{
             ...block,
             view_ids: selectedViewId ? [selectedViewId] : viewIds
@@ -541,6 +573,171 @@ function CalendarCollectionView({
         }
       `}</style>
     </div>
+  );
+}
+
+type CollectionDataWithGroupResults = CollectionQueryResult & Record<string, unknown>;
+
+interface CollectionGroupFormat {
+  hidden?: boolean;
+  property?: string;
+  value?: {
+    type?: string;
+    value?: unknown;
+  };
+}
+
+function normalizeGroupedCollectionData(
+  collection: NotionCollection,
+  collectionView: CollectionView,
+  collectionData: CollectionQueryResult,
+  recordMap: ExtendedRecordMap
+) {
+  const groupBy = collectionView.format?.collection_group_by;
+  const groups = collectionView.format?.collection_groups as CollectionGroupFormat[] | undefined;
+
+  if (!groupBy || !Array.isArray(groups) || !groups.length) {
+    return collectionData;
+  }
+
+  const collectionDataWithGroups = collectionData as CollectionDataWithGroupResults;
+  const missingGroups = groups.filter((group) => {
+    const key = getCollectionGroupResultKey(group);
+    return key && !collectionDataWithGroups[key];
+  });
+
+  if (!missingGroups.length) {
+    return collectionData;
+  }
+
+  const blockIds =
+    collectionData.collection_group_results?.blockIds || collectionData.blockIds || [];
+
+  if (!blockIds.length) {
+    return collectionData;
+  }
+
+  const normalizedData: CollectionDataWithGroupResults = { ...collectionData };
+
+  for (const group of missingGroups) {
+    const key = getCollectionGroupResultKey(group);
+
+    if (!key) continue;
+
+    const groupBlockIds = blockIds.filter((blockId) => {
+      const block = getBlockValue(recordMap.block[blockId]);
+      return block?.type === 'page' && blockMatchesCollectionGroup(block, group);
+    });
+
+    normalizedData[key] = {
+      aggregationResults: [],
+      blockIds: groupBlockIds,
+      collection_group_results: {
+        blockIds: groupBlockIds,
+        hasMore: false,
+        type: 'results'
+      },
+      hasMore: false,
+      total: groupBlockIds.length,
+      type: 'table'
+    } as CollectionQueryResult;
+  }
+
+  return normalizedData as CollectionQueryResult;
+}
+
+function getCollectionGroupResultKey(group: CollectionGroupFormat) {
+  const type = group.value?.type;
+
+  if (!type) {
+    return null;
+  }
+
+  const queryLabel = getCollectionGroupQueryLabel(group.value?.value);
+
+  if (!queryLabel) {
+    return null;
+  }
+
+  return `results:${type}:${queryLabel}`;
+}
+
+function getCollectionGroupQueryLabel(value: unknown) {
+  if (value === undefined) {
+    return 'uncategorized';
+  }
+
+  if (isDateRangeValue(value)) {
+    return value.range.start_date || value.range.end_date || null;
+  }
+
+  if (typeof value === 'object' && value && 'value' in value) {
+    const nestedValue = (value as { value?: unknown }).value;
+    return nestedValue === undefined ? null : String(nestedValue);
+  }
+
+  return String(value);
+}
+
+function blockMatchesCollectionGroup(block: PageBlock, group: CollectionGroupFormat) {
+  const propertyId = group.property;
+  const type = group.value?.type;
+
+  if (!propertyId || !type) {
+    return false;
+  }
+
+  const properties = block.properties as Record<string, Decoration[] | undefined> | undefined;
+  const data = properties?.[propertyId];
+  const expectedValue = group.value?.value;
+
+  if (expectedValue === undefined) {
+    return isEmptyPropertyData(data);
+  }
+
+  const textValue = getTextContent(data || []).trim();
+
+  switch (type) {
+    case 'checkbox':
+      return textValue === (expectedValue ? 'Yes' : 'No');
+    case 'date': {
+      if (!isDateRangeValue(expectedValue)) {
+        return false;
+      }
+
+      const date = getDateFromProperty(data);
+      return (
+        date?.startKey === expectedValue.range.start_date ||
+        date?.endKey === expectedValue.range.end_date
+      );
+    }
+    case 'multi_select':
+      return textValue
+        .split(',')
+        .map((value) => value.trim())
+        .includes(String(expectedValue));
+    case 'select':
+    case 'status':
+    default:
+      return textValue === String(expectedValue);
+  }
+}
+
+function isEmptyPropertyData(data?: Decoration[]) {
+  return !data || data.length === 0 || !getTextContent(data).trim();
+}
+
+function isDateRangeValue(value: unknown): value is {
+  range: {
+    end_date?: string;
+    start_date?: string;
+  };
+} {
+  return Boolean(
+    typeof value === 'object' &&
+      value &&
+      'range' in value &&
+      typeof (value as { range?: unknown }).range === 'object'
   );
 }
 

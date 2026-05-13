@@ -60,6 +60,27 @@ main {
   padding-right: max(0px, env(safe-area-inset-right));
 }
 
+.notion-viewer .notion-table {
+  max-width: 100%;
+  width: 100%;
+}
+
+.notion-viewer .notion-table-view,
+.notion-viewer .notion-table-header,
+.notion-viewer .notion-table-header-inner,
+.notion-viewer .notion-table-body {
+  min-width: max-content;
+}
+
+.notion-viewer .notion-table-header-inner {
+  width: max-content;
+}
+
+.notion-viewer .notion-collection-group {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .theme-toggle {
   align-items: center;
   background: var(--bg-color, #fff);
