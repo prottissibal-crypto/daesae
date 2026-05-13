@@ -10,9 +10,7 @@
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-notion-x": "^7.3.1",
-    "notion-client": "^7.3.1",
-    "notion-types": "^7.3.1",
-    "notion-utils": "^7.3.1"
+    "react-notion-x": "^7.4.0",
+    "notion-client": "^7.4.0"
   }
 }
