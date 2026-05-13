@@ -102,6 +102,22 @@ main {
   fill: var(--fg-color-5);
 }
 
+.notion-viewer.dark-mode .notion-page,
+.notion-viewer.dark-mode .notion-text,
+.notion-viewer.dark-mode .notion-title,
+.notion-viewer.dark-mode .notion-page-title,
+.notion-viewer.dark-mode .notion-page-title-text,
+.notion-viewer.dark-mode .notion-h,
+.notion-viewer.dark-mode .notion-h1,
+.notion-viewer.dark-mode .notion-h2,
+.notion-viewer.dark-mode .notion-h3,
+.notion-viewer.dark-mode .notion-collection-header-title,
+.notion-viewer.dark-mode .notion-collection-view-type,
+.notion-viewer.dark-mode .notion-collection-view-type-title,
+.notion-viewer.dark-mode .notion-collection-view-tabs-content-item {
+  color: var(--fg-color) !important;
+}
+
 .notion-viewer.dark-mode [style*='color: #000'],
 .notion-viewer.dark-mode [style*='color:#000'],
 .notion-viewer.dark-mode [style*='color: black'],

@@ -10,10 +10,12 @@ import {
 import type {
   Block,
   Collection as NotionCollection,
+  CollectionPropertySchema,
   CollectionQueryResult,
   CollectionView,
   CollectionViewBlock,
   CollectionViewPageBlock,
+  Decoration,
   ExtendedRecordMap,
   FormattedDate,
   PageBlock
@@ -38,8 +40,27 @@ interface CollectionComponentProps {
   };
 }
 
-interface CalendarEvent {
+interface PropertyComponentProps {
+  propertyId?: string;
+  schema?: CollectionPropertySchema;
+  data?: Decoration[];
+  block?: Block;
+  collection?: NotionCollection;
+  inline?: boolean;
+  linkToTitlePage?: boolean;
+  pageHeader?: boolean;
+}
+
+interface CalendarEventProperty {
   id: string;
+  schema: CollectionPropertySchema;
+  data?: Decoration[];
+}
+
+interface CalendarEvent {
+  block: PageBlock;
+  id: string;
+  properties: CalendarEventProperty[];
   title: string;
   startKey: string;
   endKey?: string;
@@ -60,6 +81,13 @@ const OriginalCollection = dynamic<CollectionComponentProps>(
   () =>
     import('react-notion-x/third-party/collection').then(
       (mod) => mod.Collection as ComponentType<CollectionComponentProps>
+    ),
+  { ssr: false }
+);
+const Property = dynamic<PropertyComponentProps>(
+  () =>
+    import('react-notion-x/third-party/collection').then(
+      (mod) => mod.Property as ComponentType<PropertyComponentProps>
     ),
   { ssr: false }
 );
@@ -212,7 +240,7 @@ function CalendarCollectionView({
     () => getCalendarEvents(collection, collectionView, collectionData, ctx),
     [collection, collectionData, collectionView, ctx]
   );
-  const initialMonthKey = useMemo(() => getInitialMonthKey(events), [events]);
+  const initialMonthKey = useMemo(() => getCurrentMonthKey(), [collectionView.id]);
   const [visibleMonthState, setVisibleMonthState] = useState({
     monthKey: initialMonthKey,
     viewId: collectionView.id
@@ -319,7 +347,24 @@ function CalendarCollectionView({
                 <div className="notion-calendar-day-number">{day.day}</div>
                 {dayEvents.map((event) => (
                   <a className="notion-calendar-event" href={event.href} key={event.id}>
-                    {event.title}
+                    <span className="notion-calendar-event-title">{event.title}</span>
+                    {event.properties.length > 0 && (
+                      <span className="notion-calendar-event-properties">
+                        {event.properties.map((property) => (
+                          <span className="notion-calendar-event-property" key={property.id}>
+                            <Property
+                              block={event.block}
+                              collection={collection}
+                              data={property.data}
+                              inline
+                              linkToTitlePage={false}
+                              propertyId={property.id}
+                              schema={property.schema}
+                            />
+                          </span>
+                        ))}
+                      </span>
+                    )}
                   </a>
                 ))}
               </div>
@@ -430,19 +475,63 @@ function CalendarCollectionView({
         }
 
         .notion-calendar-event {
-          background: var(--bg-color-2);
+          background: var(--bg-color-1);
+          border: 1px solid var(--bg-color-2);
           border-radius: 4px;
           color: var(--fg-color);
-          display: -webkit-box;
+          display: block;
           font-size: clamp(10px, 1.5vw, 12px);
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
           line-height: 1.35;
           margin-top: 4px;
+          min-width: 0;
           overflow: hidden;
           padding: 3px 5px;
           text-decoration: none;
           word-break: break-word;
+        }
+
+        .notion-calendar-event-title {
+          display: block;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .notion-calendar-event-properties {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 3px 4px;
+          margin-top: 3px;
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .notion-calendar-event-property {
+          display: inline-flex;
+          max-width: 100%;
+          min-width: 0;
+        }
+
+        .notion-calendar-event-property :global(.notion-property) {
+          align-items: center;
+          color: var(--fg-color-5);
+          display: inline-flex;
+          font-size: 11px;
+          line-height: 1.25;
+          max-width: 100%;
+          min-width: 0;
+        }
+
+        .notion-calendar-event-property :global(.notion-property-select-item),
+        .notion-calendar-event-property :global(.notion-property-multi_select-item),
+        .notion-calendar-event-property :global(.notion-property-status-item) {
+          align-items: center;
+          display: inline-flex;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         @media (max-width: 860px) {
@@ -462,6 +551,11 @@ function getCalendarEvents(
   ctx: CollectionComponentProps['ctx']
 ): CalendarEvent[] {
   const datePropertyId = getCalendarDatePropertyId(collection, collectionView);
+  const visiblePropertyIds = getCalendarVisiblePropertyIds(
+    collection,
+    collectionView,
+    datePropertyId
+  );
   const blockIds = collectionData.collection_group_results?.blockIds || collectionData.blockIds || [];
 
   const events: CalendarEvent[] = [];
@@ -475,9 +569,28 @@ function getCalendarEvents(
 
     const href =
       ctx.mapPageUrl?.(block.id, ctx.recordMap) || `/${block.id.replace(/-/g, '')}`;
+    const blockProperties = block.properties as Record<string, Decoration[] | undefined> | undefined;
+    const properties = visiblePropertyIds.flatMap((propertyId): CalendarEventProperty[] => {
+      const schema = collection.schema[propertyId];
+      const data = blockProperties?.[propertyId];
+
+      if (!schema || !hasPropertyData(data)) {
+        return [];
+      }
+
+      return [
+        {
+          id: propertyId,
+          schema,
+          data
+        }
+      ];
+    });
 
     events.push({
+      block,
       id: block.id,
+      properties,
       title: getTextContent(block.properties?.title) || 'Untitled',
       startKey: date.startKey,
       ...(date.endKey ? { endKey: date.endKey } : {}),
@@ -520,6 +633,71 @@ function getCalendarDatePropertyId(
   );
 }
 
+function getCalendarVisiblePropertyIds(
+  collection: NotionCollection,
+  collectionView: CollectionView,
+  datePropertyId?: string
+) {
+  const format = collectionView.format || {};
+  const candidates = [
+    format.calendar_properties,
+    format.calendar_view_properties,
+    format.visible_properties,
+    format.properties
+  ];
+
+  for (const candidate of candidates) {
+    const propertyIds = getVisiblePropertyIdsFromFormat(candidate).filter(
+      (propertyId) =>
+        propertyId !== 'title' &&
+        propertyId !== datePropertyId &&
+        Boolean(collection.schema[propertyId])
+    );
+
+    if (propertyIds.length) {
+      return propertyIds;
+    }
+  }
+
+  return Object.keys(collection.schema).filter((propertyId) => {
+    const schema = collection.schema[propertyId];
+
+    return (
+      propertyId !== 'title' &&
+      propertyId !== datePropertyId &&
+      ['checkbox', 'date', 'multi_select', 'select', 'status'].includes(schema?.type)
+    );
+  });
+}
+
+function getVisiblePropertyIdsFromFormat(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  const propertyIds = value.flatMap((item): string[] => {
+    if (typeof item === 'string') {
+      return [item];
+    }
+
+    if (!item || typeof item !== 'object') {
+      return [];
+    }
+
+    const property = item as { property?: unknown; visible?: unknown };
+
+    if (property.visible === false || typeof property.property !== 'string') {
+      return [];
+    }
+
+    return [property.property];
+  });
+
+  return Array.from(new Set(propertyIds));
+}
+
+function hasPropertyData(data?: Decoration[]) {
+  return Array.isArray(data) ? data.length > 0 : Boolean(data);
+}
+
 function getBlockDate(
   block: PageBlock,
   collection: NotionCollection,
@@ -560,10 +738,6 @@ function parseNotionDate(notionDate: FormattedDate) {
       ? { endKey: notionDate.end_date }
       : {})
   };
-}
-
-function getInitialMonthKey(events: CalendarEvent[]) {
-  return events[0]?.startKey.slice(0, 7) || getCurrentMonthKey();
 }
 
 function getCalendarGridDays(monthKey: string): CalendarDay[] {
