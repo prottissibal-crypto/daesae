@@ -41,9 +41,15 @@ interface CollectionComponentProps {
 interface CalendarEvent {
   id: string;
   title: string;
-  start: Date;
-  end?: Date;
+  startKey: string;
+  endKey?: string;
   href: string;
+}
+
+interface CalendarDay {
+  day: number;
+  isCurrentMonth: boolean;
+  key: string;
 }
 
 const Code = dynamic(
@@ -206,14 +212,31 @@ function CalendarCollectionView({
     () => getCalendarEvents(collection, collectionView, collectionData, ctx),
     [collection, collectionData, collectionView, ctx]
   );
-  const initialMonth = useMemo(() => getInitialMonth(events), [events]);
-  const [visibleMonth, setVisibleMonth] = useState(initialMonth);
+  const initialMonthKey = useMemo(() => getInitialMonthKey(events), [events]);
+  const [visibleMonthState, setVisibleMonthState] = useState({
+    monthKey: initialMonthKey,
+    viewId: collectionView.id
+  });
 
   useEffect(() => {
-    setVisibleMonth(initialMonth);
-  }, [initialMonth]);
+    setVisibleMonthState((current) =>
+      current.viewId === collectionView.id
+        ? current
+        : {
+            monthKey: initialMonthKey,
+            viewId: collectionView.id
+          }
+    );
+  }, [collectionView.id, initialMonthKey]);
 
-  const days = useMemo(() => getCalendarGridDays(visibleMonth), [visibleMonth]);
+  const visibleMonthKey = visibleMonthState.monthKey;
+  const setVisibleMonthKey = (monthKey: string) => {
+    setVisibleMonthState({
+      monthKey,
+      viewId: collectionView.id
+    });
+  };
+  const days = useMemo(() => getCalendarGridDays(visibleMonthKey), [visibleMonthKey]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
   const title = getTextContent(collection.name).trim();
   const blockFormat = block.format as { hide_inline_collection_name?: boolean } | undefined;
@@ -234,15 +257,15 @@ function CalendarCollectionView({
         <div className="notion-calendar-toolbar">
           <button
             aria-label="Previous month"
-            onClick={() => setVisibleMonth(addMonths(visibleMonth, -1))}
+            onClick={() => setVisibleMonthKey(addMonths(visibleMonthKey, -1))}
             type="button"
           >
             &lt;
           </button>
-          <strong>{formatMonth(visibleMonth)}</strong>
+          <strong>{formatMonth(visibleMonthKey)}</strong>
           <button
             aria-label="Next month"
-            onClick={() => setVisibleMonth(addMonths(visibleMonth, 1))}
+            onClick={() => setVisibleMonthKey(addMonths(visibleMonthKey, 1))}
             type="button"
           >
             &gt;
@@ -257,21 +280,19 @@ function CalendarCollectionView({
           ))}
 
           {days.map((day) => {
-            const key = toDateKey(day);
-            const dayEvents = eventsByDate.get(key) || [];
-            const isCurrentMonth = day.getMonth() === visibleMonth.getMonth();
+            const dayEvents = eventsByDate.get(day.key) || [];
 
             return (
               <div
                 className={[
                   'notion-calendar-day',
-                  isCurrentMonth ? '' : 'notion-calendar-day-muted'
+                  day.isCurrentMonth ? '' : 'notion-calendar-day-muted'
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                key={key}
+                key={day.key}
               >
-                <div className="notion-calendar-day-number">{day.getDate()}</div>
+                <div className="notion-calendar-day-number">{day.day}</div>
                 {dayEvents.map((event) => (
                   <a className="notion-calendar-event" href={event.href} key={event.id}>
                     {event.title}
@@ -413,10 +434,10 @@ function getCalendarEvents(
   const events: CalendarEvent[] = [];
 
   for (const blockId of blockIds) {
-      const block = getBlockValue(ctx.recordMap.block[blockId]);
+    const block = getBlockValue(ctx.recordMap.block[blockId]);
     if (!block || block.type !== 'page') continue;
 
-      const date = getBlockDate(block, collection, datePropertyId);
+    const date = getBlockDate(block, collection, datePropertyId);
     if (!date) continue;
 
       const href =
@@ -425,13 +446,13 @@ function getCalendarEvents(
     events.push({
       id: block.id,
       title: getTextContent(block.properties?.title) || 'Untitled',
-      start: date.start,
-      ...(date.end ? { end: date.end } : {}),
+      startKey: date.startKey,
+      ...(date.endKey ? { endKey: date.endKey } : {}),
       href
     });
   }
 
-  return events.sort((a, b) => a.start.getTime() - b.start.getTime());
+  return events.sort((a, b) => a.startKey.localeCompare(b.startKey));
 }
 
 function getCalendarDatePropertyId(
@@ -498,35 +519,38 @@ function getDateFromProperty(property?: unknown) {
 }
 
 function parseNotionDate(notionDate: FormattedDate) {
-  const start = parseLocalDate(notionDate.start_date, notionDate.start_time);
-  const end = notionDate.end_date
-    ? parseLocalDate(notionDate.end_date, notionDate.end_time)
-    : undefined;
+  if (!isDateKey(notionDate.start_date)) return null;
 
-  return start ? { start, end } : null;
+  return {
+    startKey: notionDate.start_date,
+    ...(notionDate.end_date && isDateKey(notionDate.end_date)
+      ? { endKey: notionDate.end_date }
+      : {})
+  };
 }
 
-function parseLocalDate(date: string, time?: string) {
-  const [year, month, day] = date.split('-').map(Number);
-  if (!year || !month || !day) return null;
-
-  const [hour = 0, minute = 0] = time?.split(':').map(Number) || [];
-  return new Date(year, month - 1, day, hour, minute);
+function getInitialMonthKey(events: CalendarEvent[]) {
+  return events[0]?.startKey.slice(0, 7) || getCurrentMonthKey();
 }
 
-function getInitialMonth(events: CalendarEvent[]) {
-  return events[0] ? startOfMonth(events[0].start) : startOfMonth(new Date());
-}
+function getCalendarGridDays(monthKey: string): CalendarDay[] {
+  const { month, year } = parseMonthKey(monthKey);
+  const firstWeekday = getUtcWeekday(year, month, 1);
+  const daysInMonth = getDaysInMonth(year, month);
+  const weekCount = Math.ceil((firstWeekday + daysInMonth) / 7);
+  const gridStart = Date.UTC(year, month - 1, 1 - firstWeekday);
 
-function getCalendarGridDays(month: Date) {
-  const firstDay = startOfMonth(month);
-  const gridStart = new Date(firstDay);
-  gridStart.setDate(firstDay.getDate() - firstDay.getDay());
+  return Array.from({ length: weekCount * 7 }, (_, index) => {
+    const date = new Date(gridStart + index * 86400000);
+    const dateYear = date.getUTCFullYear();
+    const dateMonth = date.getUTCMonth() + 1;
+    const dateDay = date.getUTCDate();
 
-  return Array.from({ length: 42 }, (_, index) => {
-    const day = new Date(gridStart);
-    day.setDate(gridStart.getDate() + index);
-    return day;
+    return {
+      day: dateDay,
+      isCurrentMonth: dateMonth === month,
+      key: createDateKey(dateYear, dateMonth, dateDay)
+    };
   });
 }
 
@@ -534,8 +558,7 @@ function groupEventsByDate(events: CalendarEvent[]) {
   const map = new Map<string, CalendarEvent[]>();
 
   for (const event of events) {
-    for (const day of getEventDays(event)) {
-      const key = toDateKey(day);
+    for (const key of getEventDateKeys(event)) {
       map.set(key, [...(map.get(key) || []), event]);
     }
   }
@@ -543,44 +566,66 @@ function groupEventsByDate(events: CalendarEvent[]) {
   return map;
 }
 
-function getEventDays(event: CalendarEvent) {
-  const days: Date[] = [];
-  const start = startOfDay(event.start);
-  const end = event.end ? startOfDay(event.end) : start;
+function getEventDateKeys(event: CalendarEvent) {
+  const keys: string[] = [];
+  const start = parseDateKey(event.startKey);
+  const end = parseDateKey(event.endKey || event.startKey);
+  const startTime = Date.UTC(start.year, start.month - 1, start.day);
+  const endTime = Date.UTC(end.year, end.month - 1, end.day);
   const maxDays = 366;
 
-  for (
-    let day = new Date(start), count = 0;
-    day <= end && count < maxDays;
-    day.setDate(day.getDate() + 1), count += 1
-  ) {
-    days.push(new Date(day));
+  for (let time = startTime, count = 0; time <= endTime && count < maxDays; time += 86400000, count += 1) {
+    const date = new Date(time);
+    keys.push(createDateKey(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()));
   }
 
-  return days;
+  return keys;
 }
 
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function getCurrentMonthKey() {
+  const now = new Date();
+  return createMonthKey(now.getFullYear(), now.getMonth() + 1);
 }
 
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+function addMonths(monthKey: string, amount: number) {
+  const { month, year } = parseMonthKey(monthKey);
+  const date = new Date(Date.UTC(year, month - 1 + amount, 1));
+  return createMonthKey(date.getUTCFullYear(), date.getUTCMonth() + 1);
 }
 
-function addMonths(date: Date, amount: number) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
+function createMonthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, '0')}`;
 }
 
-function toDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+function createDateKey(year: number, month: number, day: number) {
+  return `${createMonthKey(year, month)}-${String(day).padStart(2, '0')}`;
 }
 
-function formatMonth(date: Date) {
-  return `${date.getFullYear()}\ub144 ${date.getMonth() + 1}\uc6d4`;
+function getUtcWeekday(year: number, month: number, day: number) {
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function isDateKey(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function parseMonthKey(monthKey: string) {
+  const [year, month] = monthKey.split('-').map(Number);
+  return { month, year };
+}
+
+function parseDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return { day, month, year };
+}
+
+function formatMonth(monthKey: string) {
+  const { month, year } = parseMonthKey(monthKey);
+  return `${year}\ub144 ${month}\uc6d4`;
 }
 
 interface NotionPageProps {
