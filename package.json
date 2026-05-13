@@ -12,5 +12,10 @@
     "react-dom": "18.3.1",
     "react-notion-x": "^7.4.0",
     "notion-client": "^7.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "@types/react": "^18.3.3",
+    "@types/node": "^22.5.4"
   }
 }
