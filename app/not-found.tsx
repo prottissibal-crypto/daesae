@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 export default function NotFound() {
   return (
     <main
@@ -16,7 +14,7 @@ export default function NotFound() {
         position: 'relative'
       }}
     >
-      <Link
+      <a
         href="/"
         style={{
           alignItems: 'center',
@@ -45,7 +43,7 @@ export default function NotFound() {
           width="36"
         />
         <span>대세영어학원</span>
-      </Link>
+      </a>
       <section
         style={{
           maxWidth: '520px',
@@ -84,7 +82,7 @@ export default function NotFound() {
         >
           주소가 잘못되었거나, 아직 등록되지 않은 페이지입니다.
         </p>
-        <Link
+        <a
           href="/"
           style={{
             alignItems: 'center',
@@ -101,7 +99,7 @@ export default function NotFound() {
           }}
         >
           홈으로 가기
-        </Link>
+        </a>
       </section>
     </main>
   );
