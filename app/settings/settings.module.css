@@ -115,6 +115,11 @@
   opacity: 0.68;
 }
 
+.textButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .field input:disabled {
   background: #f4f6f2;
   color: #536064;
@@ -389,6 +394,29 @@
   white-space: pre-wrap;
 }
 
+.pagination {
+  align-items: center;
+  color: #536064;
+  display: flex;
+  font-size: 14px;
+  gap: 14px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.paginationActions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.paginationActions strong {
+  color: #1d2528;
+  font-size: 14px;
+  min-width: 52px;
+  text-align: center;
+}
+
 @media (max-width: 900px) {
   .form,
   .noticeForm {
@@ -445,9 +473,18 @@
   }
 
   .statusBar,
+  .pagination,
   .rule {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .paginationActions {
+    justify-content: stretch;
+  }
+
+  .paginationActions .textButton {
+    flex: 1;
   }
 
   .ruleActions {

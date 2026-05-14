@@ -36,12 +36,14 @@ const storageLabels: Record<StorageMode, string> = {
   file: '내 PC 저장',
   kv: '모두에게 적용됨'
 };
+const ALIAS_PAGE_SIZE = 20;
 
 export default function SettingsClient() {
   const [alias, setAlias] = useState('');
   const [editingAlias, setEditingAlias] = useState<string | null>(null);
   const [notionId, setNotionId] = useState('');
   const [query, setQuery] = useState('');
+  const [aliasPage, setAliasPage] = useState(1);
   const [rules, setRules] = useState<AliasRule[]>([]);
   const [aliasStorageMode, setAliasStorageMode] = useState<StorageMode>();
   const [aliasMessage, setAliasMessage] = useState('');
@@ -75,6 +77,14 @@ export default function SettingsClient() {
       )
     );
   }, [origin, query, rules]);
+  const aliasPageCount = Math.max(1, Math.ceil(filteredRules.length / ALIAS_PAGE_SIZE));
+  const pagedRules = useMemo(() => {
+    const startIndex = (aliasPage - 1) * ALIAS_PAGE_SIZE;
+
+    return filteredRules.slice(startIndex, startIndex + ALIAS_PAGE_SIZE);
+  }, [aliasPage, filteredRules]);
+  const aliasFirstIndex = filteredRules.length ? (aliasPage - 1) * ALIAS_PAGE_SIZE + 1 : 0;
+  const aliasLastIndex = Math.min(aliasPage * ALIAS_PAGE_SIZE, filteredRules.length);
 
   const loadRules = async () => {
     setIsAliasLoading(true);
@@ -128,6 +138,14 @@ export default function SettingsClient() {
     void loadRules();
     void loadNotices();
   }, []);
+
+  useEffect(() => {
+    setAliasPage(1);
+  }, [query]);
+
+  useEffect(() => {
+    setAliasPage((currentPage) => Math.min(currentPage, aliasPageCount));
+  }, [aliasPageCount]);
 
   const resetAliasForm = () => {
     setAlias('');
@@ -301,122 +319,6 @@ export default function SettingsClient() {
         <section className={styles.panel}>
           <div className={styles.sectionHeader}>
             <div>
-              <h2>짧은 주소</h2>
-              <p>학생에게 배포할 Notion 페이지 주소를 쉽게 바꿔요.</p>
-            </div>
-          </div>
-
-          <form className={styles.form} onSubmit={onAliasSubmit}>
-            <label className={styles.field}>
-              <span>짧은 주소</span>
-              <input
-                autoCapitalize="characters"
-                disabled={Boolean(editingAlias)}
-                onChange={(event) => setAlias(event.target.value)}
-                placeholder="H1ABTT"
-                required
-                value={alias}
-              />
-            </label>
-
-            <label className={styles.field}>
-              <span>노션 ID</span>
-              <input
-                onChange={(event) => setNotionId(event.target.value)}
-                placeholder="2e59e017f46780079207fd9c324dae6e"
-                required
-                value={notionId}
-              />
-            </label>
-
-            <div className={styles.formActions}>
-              <button className={styles.primaryButton} disabled={isAliasSaving} type="submit">
-                {isAliasSaving ? '저장 중' : editingAlias ? '수정 저장' : '저장'}
-              </button>
-              {editingAlias && (
-                <button className={styles.textButton} onClick={resetAliasForm} type="button">
-                  취소
-                </button>
-              )}
-            </div>
-          </form>
-
-          <div className={styles.statusBar}>
-            <span>{aliasStorageMode ? storageLabels[aliasStorageMode] : '확인 중'}</span>
-            <button className={styles.textButton} onClick={loadRules} type="button">
-              새로고침
-            </button>
-            {aliasMessage && <strong>{aliasMessage}</strong>}
-          </div>
-
-          {aliasStorageMode === 'browser' && (
-            <p className={styles.warning}>지금은 이 브라우저에서만 저장돼요.</p>
-          )}
-
-          <div className={styles.listHeader}>
-            <h3>만든 주소</h3>
-            <label className={styles.searchField}>
-              <span>검색</span>
-              <input
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="H1ABTT"
-                type="search"
-                value={query}
-              />
-            </label>
-          </div>
-
-          <section className={styles.rules} aria-label="짧은 주소 목록">
-            {isAliasLoading ? (
-              <p className={styles.empty}>불러오는 중이에요.</p>
-            ) : filteredRules.length ? (
-              filteredRules.map((rule) => {
-                const ruleUrl = `${origin}/${rule.alias}`;
-
-                return (
-                  <article className={styles.rule} key={rule.alias}>
-                    <div className={styles.ruleMain}>
-                      <h4>{rule.alias}</h4>
-                      <a href={`/${rule.alias}`}>{ruleUrl}</a>
-                      <p>{rule.notionId}</p>
-                    </div>
-                    <div className={styles.ruleActions}>
-                      <button
-                        className={styles.editButton}
-                        onClick={() => onEditAlias(rule)}
-                        type="button"
-                      >
-                        수정
-                      </button>
-                      <button
-                        className={styles.copyButton}
-                        onClick={() => onCopy(ruleUrl, rule.alias)}
-                        type="button"
-                      >
-                        링크 복사
-                      </button>
-                      <button
-                        className={styles.deleteButton}
-                        onClick={() => onDeleteAlias(rule.alias)}
-                        type="button"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </article>
-                );
-              })
-            ) : (
-              <p className={styles.empty}>
-                {query.trim() ? '검색 결과가 없어요.' : '아직 만든 주소가 없어요.'}
-              </p>
-            )}
-          </section>
-        </section>
-
-        <section className={styles.panel}>
-          <div className={styles.sectionHeader}>
-            <div>
               <h2>공지</h2>
               <p>등록한 공지는 학생 Notion 페이지 상단에 공통으로 표시돼요.</p>
             </div>
@@ -518,6 +420,154 @@ export default function SettingsClient() {
             )}
           </section>
         </section>
+
+        <section className={styles.panel}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2>짧은 주소</h2>
+              <p>학생에게 배포할 Notion 페이지 주소를 쉽게 바꿔요.</p>
+            </div>
+          </div>
+
+          <form className={styles.form} onSubmit={onAliasSubmit}>
+            <label className={styles.field}>
+              <span>짧은 주소</span>
+              <input
+                autoCapitalize="characters"
+                disabled={Boolean(editingAlias)}
+                onChange={(event) => setAlias(event.target.value)}
+                placeholder="H1ABTT"
+                required
+                value={alias}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>노션 ID</span>
+              <input
+                onChange={(event) => setNotionId(event.target.value)}
+                placeholder="2e59e017f46780079207fd9c324dae6e"
+                required
+                value={notionId}
+              />
+            </label>
+
+            <div className={styles.formActions}>
+              <button className={styles.primaryButton} disabled={isAliasSaving} type="submit">
+                {isAliasSaving ? '저장 중' : editingAlias ? '수정 저장' : '저장'}
+              </button>
+              {editingAlias && (
+                <button className={styles.textButton} onClick={resetAliasForm} type="button">
+                  취소
+                </button>
+              )}
+            </div>
+          </form>
+
+          <div className={styles.statusBar}>
+            <span>{aliasStorageMode ? storageLabels[aliasStorageMode] : '확인 중'}</span>
+            <button className={styles.textButton} onClick={loadRules} type="button">
+              새로고침
+            </button>
+            {aliasMessage && <strong>{aliasMessage}</strong>}
+          </div>
+
+          {aliasStorageMode === 'browser' && (
+            <p className={styles.warning}>지금은 이 브라우저에서만 저장돼요.</p>
+          )}
+
+          <div className={styles.listHeader}>
+            <h3>만든 주소</h3>
+            <label className={styles.searchField}>
+              <span>검색</span>
+              <input
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="H1ABTT"
+                type="search"
+                value={query}
+              />
+            </label>
+          </div>
+
+          <section className={styles.rules} aria-label="짧은 주소 목록">
+            {isAliasLoading ? (
+              <p className={styles.empty}>불러오는 중이에요.</p>
+            ) : filteredRules.length ? (
+              pagedRules.map((rule) => {
+                const ruleUrl = `${origin}/${rule.alias}`;
+
+                return (
+                  <article className={styles.rule} key={rule.alias}>
+                    <div className={styles.ruleMain}>
+                      <h4>{rule.alias}</h4>
+                      <a href={`/${rule.alias}`}>{ruleUrl}</a>
+                      <p>{rule.notionId}</p>
+                    </div>
+                    <div className={styles.ruleActions}>
+                      <button
+                        className={styles.editButton}
+                        onClick={() => onEditAlias(rule)}
+                        type="button"
+                      >
+                        수정
+                      </button>
+                      <button
+                        className={styles.copyButton}
+                        onClick={() => onCopy(ruleUrl, rule.alias)}
+                        type="button"
+                      >
+                        링크 복사
+                      </button>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={() => onDeleteAlias(rule.alias)}
+                        type="button"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <p className={styles.empty}>
+                {query.trim() ? '검색 결과가 없어요.' : '아직 만든 주소가 없어요.'}
+              </p>
+            )}
+          </section>
+
+          {!isAliasLoading && filteredRules.length > ALIAS_PAGE_SIZE && (
+            <nav className={styles.pagination} aria-label="짧은 주소 페이지">
+              <span>
+                {aliasFirstIndex}-{aliasLastIndex} / {filteredRules.length}
+              </span>
+              <div className={styles.paginationActions}>
+                <button
+                  className={styles.textButton}
+                  disabled={aliasPage <= 1}
+                  onClick={() => setAliasPage((currentPage) => Math.max(1, currentPage - 1))}
+                  type="button"
+                >
+                  이전
+                </button>
+                <strong>
+                  {aliasPage} / {aliasPageCount}
+                </strong>
+                <button
+                  className={styles.textButton}
+                  disabled={aliasPage >= aliasPageCount}
+                  onClick={() =>
+                    setAliasPage((currentPage) => Math.min(aliasPageCount, currentPage + 1))
+                  }
+                  type="button"
+                >
+                  다음
+                </button>
+              </div>
+            </nav>
+          )}
+        </section>
+
       </section>
     </main>
   );
