@@ -1,14 +1,14 @@
 import type { ExtendedRecordMap } from 'notion-types';
 import { NotionAPI } from 'notion-client';
 import { getBlockValue } from 'notion-utils';
+import { cookies } from 'next/headers';
+import { ALIAS_COOKIE_NAME, resolveNotionPageIdFromPath } from '../../lib/notionAliasRules';
 import NotionPage from './NotionPage';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_ALIAS_RESOLVE_DEPTH = 2;
 const MAX_ALIAS_TARGETS_PER_DEPTH = 20;
-const NOTION_PAGE_ID_AT_END =
-  /([0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
 
 interface Params {
   id: string;
@@ -21,12 +21,6 @@ async function fetchNotionPage(id: string): Promise<ExtendedRecordMap> {
   await resolveAliasTargets(recordMap, notion);
 
   return recordMap;
-}
-
-function getNotionPageIdFromSlug(slug: string) {
-  const match = slug.match(NOTION_PAGE_ID_AT_END);
-
-  return match ? match[1].replace(/-/g, '') : null;
 }
 
 async function resolveAliasTargets(recordMap: ExtendedRecordMap, notion: NotionAPI) {
@@ -120,13 +114,15 @@ function mergeRecordMaps(recordMap: ExtendedRecordMap, sourceRecordMap: Extended
 }
 
 export default async function Page({ params }: { params: Params }) {
-  const notionId = getNotionPageIdFromSlug(params.id);
+  const notionId = await resolveNotionPageIdFromPath(params.id, {
+    cookieValue: cookies().get(ALIAS_COOKIE_NAME)?.value
+  });
 
   if (!notionId) {
     return (
       <main style={{ minHeight: '100vh', padding: '4rem', fontFamily: 'system-ui, sans-serif' }}>
         <h1>잘못된 Notion page id입니다.</h1>
-        <p>URL 끝에 32자리 Notion id 또는 하이픈 포함 UUID를 넣어 주세요.</p>
+        <p>URL 끝에 32자리 Notion id, 하이픈 포함 UUID, 또는 등록된 규칙을 넣어 주세요.</p>
       </main>
     );
   }
