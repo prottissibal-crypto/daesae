@@ -100,27 +100,37 @@ const Modal = dynamic(
   { ssr: false }
 );
 
-function Collection(props: CollectionComponentProps) {
-  const { block, ctx } = props;
+type CollectionWithInitialViewProps = CollectionComponentProps & {
+  initialCollectionViewId?: string;
+};
+
+function Collection(props: CollectionWithInitialViewProps) {
+  const { block, ctx, initialCollectionViewId, ...collectionProps } = props;
 
   if (block.type === 'page') {
-    return <OriginalCollection {...props} />;
+    return <OriginalCollection {...collectionProps} block={block} ctx={ctx} />;
   }
 
   const recordMap = ctx.recordMap;
   const viewIds = block.view_ids || [];
-  const defaultViewId = viewIds[0];
+  const requestedViewId = findMatchingViewId(viewIds, initialCollectionViewId);
+  const defaultViewId = requestedViewId || viewIds[0];
   const storageKey = `notion-collection-view:${block.id}`;
   const [selectedViewId, setSelectedViewId] = useState(defaultViewId);
 
   useEffect(() => {
+    if (requestedViewId) {
+      setSelectedViewId(requestedViewId);
+      return;
+    }
+
     const savedViewId = window.localStorage.getItem(storageKey);
     if (savedViewId && viewIds.includes(savedViewId)) {
       setSelectedViewId(savedViewId);
     } else {
       setSelectedViewId(defaultViewId);
     }
-  }, [defaultViewId, storageKey, viewIds]);
+  }, [defaultViewId, requestedViewId, storageKey, viewIds]);
 
   const collectionId = getBlockCollectionId(block, recordMap);
   const collection = collectionId
@@ -138,39 +148,80 @@ function Collection(props: CollectionComponentProps) {
     setSelectedViewId(viewId);
     window.localStorage.setItem(storageKey, viewId);
   };
-  const rendererCollectionData = useMemo(
+  const rendererCollectionView = useMemo(
     () =>
       collection && collectionView && collectionData
-        ? normalizeGroupedCollectionData(collection, collectionView, collectionData, recordMap)
-        : collectionData,
+        ? normalizeBoardCollectionView(collection, collectionView, collectionData, recordMap)
+        : collectionView,
     [collection, collectionData, collectionView, recordMap]
   );
+  const rendererCollectionData = useMemo(
+    () =>
+      collection && rendererCollectionView && collectionData
+        ? normalizeCollectionData(collection, rendererCollectionView, collectionData, recordMap)
+        : collectionData,
+    [collection, collectionData, recordMap, rendererCollectionView]
+  );
   const rendererCtx = useMemo(() => {
+    const shouldPatchCollectionView =
+      Boolean(selectedViewId && rendererCollectionView && rendererCollectionView !== collectionView);
+    const shouldPatchCollectionData =
+      Boolean(
+        collectionId &&
+          selectedViewId &&
+          rendererCollectionData &&
+          rendererCollectionData !== collectionData
+      );
+
     if (
-      !collectionId ||
-      !selectedViewId ||
-      !rendererCollectionData ||
-      rendererCollectionData === collectionData
+      (!shouldPatchCollectionView && !shouldPatchCollectionData) ||
+      !selectedViewId
     ) {
       return ctx;
     }
 
+    const patchedRecordMap: ExtendedRecordMap = { ...recordMap };
+
+    if (shouldPatchCollectionView && rendererCollectionView) {
+      const collectionViewBox = recordMap.collection_view[selectedViewId];
+
+      if (collectionViewBox) {
+        patchedRecordMap.collection_view = {
+          ...recordMap.collection_view,
+          [selectedViewId]: {
+            role: collectionViewBox.role,
+            value: rendererCollectionView
+          }
+        };
+      }
+    }
+
+    if (shouldPatchCollectionData && collectionId && rendererCollectionData) {
+      patchedRecordMap.collection_query = {
+        ...recordMap.collection_query,
+        [collectionId]: {
+          ...recordMap.collection_query[collectionId],
+          [selectedViewId]: rendererCollectionData
+        }
+      };
+    }
+
     return {
       ...ctx,
-      recordMap: {
-        ...recordMap,
-        collection_query: {
-          ...recordMap.collection_query,
-          [collectionId]: {
-            ...recordMap.collection_query[collectionId],
-            [selectedViewId]: rendererCollectionData
-          }
-        }
-      }
+      recordMap: patchedRecordMap
     };
-  }, [collectionData, collectionId, ctx, recordMap, rendererCollectionData, selectedViewId]);
+  }, [
+    collectionData,
+    collectionId,
+    collectionView,
+    ctx,
+    recordMap,
+    rendererCollectionData,
+    rendererCollectionView,
+    selectedViewId
+  ]);
 
-  if (collectionView?.type !== 'calendar' || !collection || !collectionData) {
+  if (rendererCollectionView?.type !== 'calendar' || !collection || !collectionData) {
     return (
       <>
         <CollectionViewTabs
@@ -180,7 +231,7 @@ function Collection(props: CollectionComponentProps) {
           viewIds={viewIds}
         />
         <OriginalCollection
-          {...props}
+          {...collectionProps}
           ctx={rendererCtx}
           block={{
             ...block,
@@ -203,7 +254,7 @@ function Collection(props: CollectionComponentProps) {
         block={block}
         collection={collection}
         collectionData={collectionData}
-        collectionView={collectionView}
+        collectionView={rendererCollectionView}
         ctx={ctx}
       />
     </>
@@ -253,6 +304,20 @@ function CollectionViewTabs({
       })}
     </div>
   );
+}
+
+function findMatchingViewId(viewIds: string[], requestedViewId?: string) {
+  const normalizedRequestedViewId = normalizeNotionId(requestedViewId);
+
+  if (!normalizedRequestedViewId) {
+    return undefined;
+  }
+
+  return viewIds.find((viewId) => normalizeNotionId(viewId) === normalizedRequestedViewId);
+}
+
+function normalizeNotionId(value?: string) {
+  return value?.replace(/-/g, '').toLowerCase();
 }
 
 function CalendarCollectionView({
@@ -578,6 +643,39 @@ function CalendarCollectionView({
 
 type CollectionDataWithGroupResults = CollectionQueryResult & Record<string, unknown>;
 
+type CollectionDataWithBoardResults = CollectionDataWithGroupResults & {
+  board_columns?: {
+    results?: BoardColumnResult[];
+  };
+};
+
+type BoardCollectionViewFormat = CollectionView['format'] & {
+  board_columns?: CollectionGroupFormat[];
+  board_columns_by?: CollectionGroupByFormat;
+  board_groups2?: CollectionGroupFormat[];
+};
+
+type CollectionPropertySchemaWithOptions = CollectionPropertySchema & {
+  options?: Array<{
+    value?: unknown;
+  }>;
+};
+
+interface BoardColumnResult {
+  total?: number;
+  value?: {
+    type?: string;
+    value?: unknown;
+  };
+}
+
+interface CollectionGroupByFormat {
+  groupBy?: string;
+  hideEmptyGroups?: boolean;
+  property?: string;
+  type?: string;
+}
+
 interface CollectionGroupFormat {
   hidden?: boolean;
   property?: string;
@@ -585,6 +683,131 @@ interface CollectionGroupFormat {
     type?: string;
     value?: unknown;
   };
+}
+
+function normalizeCollectionData(
+  collection: NotionCollection,
+  collectionView: CollectionView,
+  collectionData: CollectionQueryResult,
+  recordMap: ExtendedRecordMap
+) {
+  const groupedData = normalizeGroupedCollectionData(
+    collection,
+    collectionView,
+    collectionData,
+    recordMap
+  );
+
+  return normalizeBoardCollectionData(collection, collectionView, groupedData, recordMap);
+}
+
+function normalizeBoardCollectionView(
+  collection: NotionCollection,
+  collectionView: CollectionView,
+  collectionData: CollectionQueryResult,
+  recordMap: ExtendedRecordMap
+) {
+  if (collectionView.type !== 'board') {
+    return collectionView;
+  }
+
+  const format = collectionView.format as BoardCollectionViewFormat;
+
+  if (getBoardColumnsFromFormat(format).length) {
+    return collectionView;
+  }
+
+  const boardColumnsBy = format?.board_columns_by;
+  const propertyId = boardColumnsBy?.property;
+  const schema = propertyId ? collection.schema[propertyId] : undefined;
+  const type = boardColumnsBy?.type || schema?.type;
+
+  if (!propertyId || !schema || !type) {
+    return collectionView;
+  }
+
+  const blockIds = getCollectionDataBlockIds(collectionData);
+  const hideEmptyGroups = boardColumnsBy?.hideEmptyGroups === true;
+  const boardColumns = getBoardColumnGroups(
+    schema,
+    propertyId,
+    type,
+    blockIds,
+    recordMap
+  ).map((group) => ({
+    ...group,
+    hidden: hideEmptyGroups && getBoardColumnBlockIds(blockIds, recordMap, group).length === 0
+  }));
+
+  if (!boardColumns.length) {
+    return collectionView;
+  }
+
+  return {
+    ...collectionView,
+    format: {
+      ...format,
+      board_columns: boardColumns
+    }
+  };
+}
+
+function normalizeBoardCollectionData(
+  collection: NotionCollection,
+  collectionView: CollectionView,
+  collectionData: CollectionQueryResult,
+  recordMap: ExtendedRecordMap
+) {
+  if (collectionView.type !== 'board') {
+    return collectionData;
+  }
+
+  const format = collectionView.format as BoardCollectionViewFormat;
+  const boardColumns = getBoardColumnsFromFormat(format);
+
+  if (!boardColumns.length) {
+    return collectionData;
+  }
+
+  const blockIds = getCollectionDataBlockIds(collectionData);
+  const collectionDataWithBoard = collectionData as CollectionDataWithBoardResults;
+  const previousBoardResults = collectionDataWithBoard.board_columns?.results || [];
+  const normalizedData: CollectionDataWithBoardResults = { ...collectionData };
+  let didChange = false;
+
+  const boardResults = boardColumns.map((column, index) => {
+    const groupBlockIds = getBoardColumnBlockIds(blockIds, recordMap, column);
+    const key = getCollectionGroupResultKey(column);
+
+    if (key && !normalizedData[key]) {
+      normalizedData[key] = createCollectionQueryResult(groupBlockIds, 'board');
+      didChange = true;
+    }
+
+    return {
+      ...previousBoardResults[index],
+      total: groupBlockIds.length,
+      value: column.value
+    };
+  });
+
+  const shouldPatchBoardColumns =
+    previousBoardResults.length !== boardResults.length ||
+    boardResults.some(
+      (result, index) =>
+        previousBoardResults[index]?.total !== result.total ||
+        previousBoardResults[index]?.value !== result.value
+    );
+
+  if (shouldPatchBoardColumns) {
+    normalizedData.board_columns = {
+      ...collectionDataWithBoard.board_columns,
+      results: boardResults
+    };
+    didChange = true;
+  }
+
+  return didChange ? (normalizedData as CollectionQueryResult) : collectionData;
 }
 
 function normalizeGroupedCollectionData(
@@ -610,8 +833,7 @@ function normalizeGroupedCollectionData(
     return collectionData;
   }
 
-  const blockIds =
-    collectionData.collection_group_results?.blockIds || collectionData.blockIds || [];
+  const blockIds = getCollectionDataBlockIds(collectionData);
 
   if (!blockIds.length) {
     return collectionData;
@@ -629,21 +851,114 @@ function normalizeGroupedCollectionData(
       return block?.type === 'page' && blockMatchesCollectionGroup(block, group);
     });
 
-    normalizedData[key] = {
-      aggregationResults: [],
-      blockIds: groupBlockIds,
-      collection_group_results: {
-        blockIds: groupBlockIds,
-        hasMore: false,
-        type: 'results'
-      },
-      hasMore: false,
-      total: groupBlockIds.length,
-      type: 'table'
-    } as CollectionQueryResult;
+    normalizedData[key] = createCollectionQueryResult(groupBlockIds, 'table');
   }
 
   return normalizedData as CollectionQueryResult;
+}
+
+function getBoardColumnsFromFormat(format?: BoardCollectionViewFormat): CollectionGroupFormat[] {
+  if (Array.isArray(format?.board_columns) && format.board_columns.length) {
+    return format.board_columns;
+  }
+
+  if (Array.isArray(format?.board_groups2) && format.board_groups2.length) {
+    return format.board_groups2;
+  }
+
+  return [];
+}
+
+function getBoardColumnGroups(
+  schema: CollectionPropertySchema,
+  propertyId: string,
+  type: string,
+  blockIds: string[],
+  recordMap: ExtendedRecordMap
+): CollectionGroupFormat[] {
+  const options = (schema as CollectionPropertySchemaWithOptions).options || [];
+  const optionGroups = options.flatMap((option): CollectionGroupFormat[] => {
+    if (option.value === undefined || option.value === null) {
+      return [];
+    }
+
+    return [
+      {
+        hidden: false,
+        property: propertyId,
+        value: {
+          type,
+          value: option.value
+        }
+      }
+    ];
+  });
+
+  if (optionGroups.length) {
+    return optionGroups;
+  }
+
+  const values = new Set<string>();
+
+  for (const blockId of blockIds) {
+    const block = getBlockValue(recordMap.block[blockId]);
+    if (!block || block.type !== 'page') continue;
+
+    const properties = block.properties as Record<string, Decoration[] | undefined> | undefined;
+    const textValue = getTextContent(properties?.[propertyId] || []).trim();
+    if (!textValue) continue;
+
+    if (type === 'multi_select') {
+      for (const value of textValue.split(',')) {
+        const trimmedValue = value.trim();
+        if (trimmedValue) values.add(trimmedValue);
+      }
+    } else {
+      values.add(textValue);
+    }
+  }
+
+  return Array.from(values).map((value) => ({
+    hidden: false,
+    property: propertyId,
+    value: {
+      type,
+      value
+    }
+  }));
+}
+
+function getBoardColumnBlockIds(
+  blockIds: string[],
+  recordMap: ExtendedRecordMap,
+  group: CollectionGroupFormat
+) {
+  return blockIds.filter((blockId) => {
+    const block = getBlockValue(recordMap.block[blockId]);
+    return block?.type === 'page' && blockMatchesCollectionGroup(block, group);
+  });
+}
+
+function getCollectionDataBlockIds(collectionData: CollectionQueryResult) {
+  return collectionData.collection_group_results?.blockIds || collectionData.blockIds || [];
+}
+
+function createCollectionQueryResult(
+  blockIds: string[],
+  type: CollectionQueryResult['type']
+) {
+  return {
+    aggregationResults: [],
+    blockIds,
+    collection_group_results: {
+      blockIds,
+      hasMore: false,
+      type: 'results'
+    },
+    hasMore: false,
+    total: blockIds.length,
+    type
+  } as CollectionQueryResult;
 }
 
 function getCollectionGroupResultKey(group: CollectionGroupFormat) {
@@ -1031,10 +1346,11 @@ function formatMonth(monthKey: string) {
 }
 
 interface NotionPageProps {
+  initialCollectionViewId?: string;
   recordMap: ExtendedRecordMap;
 }
 
-export default function NotionPage({ recordMap }: NotionPageProps) {
+export default function NotionPage({ initialCollectionViewId, recordMap }: NotionPageProps) {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -1084,7 +1400,9 @@ export default function NotionPage({ recordMap }: NotionPageProps) {
         mapPageUrl={(pageId) => `/${pageId.replace(/-/g, '')}`}
         components={{
           Code,
-          Collection,
+          Collection: (props: CollectionComponentProps) => (
+            <Collection {...props} initialCollectionViewId={initialCollectionViewId} />
+          ),
           Equation,
           Modal
         }}

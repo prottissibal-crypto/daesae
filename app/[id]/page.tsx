@@ -14,6 +14,10 @@ interface Params {
   id: string;
 }
 
+interface SearchParams {
+  v?: string | string[];
+}
+
 async function fetchNotionPage(id: string): Promise<ExtendedRecordMap> {
   const notion = new NotionAPI();
   const recordMap = await notion.getPage(id);
@@ -113,10 +117,21 @@ function mergeRecordMaps(recordMap: ExtendedRecordMap, sourceRecordMap: Extended
   }
 }
 
-export default async function Page({ params }: { params: Params }) {
+function getSearchParamValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function Page({
+  params,
+  searchParams
+}: {
+  params: Params;
+  searchParams?: SearchParams;
+}) {
   const notionId = await resolveNotionPageIdFromPath(params.id, {
     cookieValue: cookies().get(ALIAS_COOKIE_NAME)?.value
   });
+  const initialCollectionViewId = getSearchParamValue(searchParams?.v);
 
   if (!notionId) {
     return (
@@ -131,7 +146,7 @@ export default async function Page({ params }: { params: Params }) {
 
   return (
     <main style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-      <NotionPage recordMap={recordMap} />
+      <NotionPage initialCollectionViewId={initialCollectionViewId} recordMap={recordMap} />
     </main>
   );
 }
