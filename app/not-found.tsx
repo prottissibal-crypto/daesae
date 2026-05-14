@@ -12,9 +12,40 @@ export default function NotFound() {
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         justifyContent: 'center',
         minHeight: '100vh',
-        padding: '32px'
+        padding: '88px 32px 32px',
+        position: 'relative'
       }}
     >
+      <Link
+        href="/"
+        style={{
+          alignItems: 'center',
+          color: '#1f2933',
+          display: 'inline-flex',
+          fontSize: '18px',
+          fontWeight: 800,
+          gap: '10px',
+          left: 'clamp(20px, 4vw, 44px)',
+          lineHeight: 1,
+          position: 'absolute',
+          textDecoration: 'none',
+          top: '24px'
+        }}
+      >
+        <img
+          alt="대세영어학원"
+          height="36"
+          src="/daesae-logo.webp"
+          style={{
+            borderRadius: '6px',
+            display: 'block',
+            height: '36px',
+            width: '36px'
+          }}
+          width="36"
+        />
+        <span>대세영어학원</span>
+      </Link>
       <section
         style={{
           maxWidth: '520px',
