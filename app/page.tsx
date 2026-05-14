@@ -34,7 +34,7 @@ export default function HomePage() {
               src="/daesae-logo.webp"
               width="152"
             />
-            <a className={styles.navLink} href="tel:050803223733">
+            <a className={styles.navLink} href="tel:0319663353">
               상담 문의
             </a>
           </nav>
@@ -47,7 +47,7 @@ export default function HomePage() {
               영어 실력을 만들어갑니다.
             </p>
             <div className={styles.heroActions}>
-              <a className={styles.primaryButton} href="tel:050803223733">
+              <a className={styles.primaryButton} href="tel:0319663353">
                 전화 상담
               </a>
               <a
@@ -112,7 +112,7 @@ export default function HomePage() {
             <div>
               <dt>상담 전화</dt>
               <dd>
-                <a href="tel:050803223733">0508-0322-3733</a>
+                <a href="tel:0319663353">031-966-3353</a>
               </dd>
             </div>
             <div>
