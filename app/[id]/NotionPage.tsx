@@ -1348,9 +1348,14 @@ function formatMonth(monthKey: string) {
 interface NotionPageProps {
   initialCollectionViewId?: string;
   recordMap: ExtendedRecordMap;
+  rootPageId: string;
 }
 
-export default function NotionPage({ initialCollectionViewId, recordMap }: NotionPageProps) {
+export default function NotionPage({
+  initialCollectionViewId,
+  recordMap,
+  rootPageId
+}: NotionPageProps) {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -1395,6 +1400,8 @@ export default function NotionPage({ initialCollectionViewId, recordMap }: Notio
       </button>
       <NotionRenderer
         recordMap={recordMap}
+        blockId={rootPageId}
+        rootPageId={rootPageId}
         darkMode={darkMode}
         fullPage
         mapPageUrl={(pageId) => `/${pageId.replace(/-/g, '')}`}

@@ -121,6 +121,14 @@ function getSearchParamValue(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getRecordMapBlockId(recordMap: ExtendedRecordMap, pageId: string) {
+  const normalizedPageId = pageId.replace(/-/g, '').toLowerCase();
+
+  return Object.keys(recordMap.block).find(
+    (blockId) => blockId.replace(/-/g, '').toLowerCase() === normalizedPageId
+  );
+}
+
 export default async function Page({
   params,
   searchParams
@@ -143,10 +151,15 @@ export default async function Page({
   }
 
   const recordMap = await fetchNotionPage(notionId);
+  const rootPageId = getRecordMapBlockId(recordMap, notionId) || notionId;
 
   return (
     <main style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-      <NotionPage initialCollectionViewId={initialCollectionViewId} recordMap={recordMap} />
+      <NotionPage
+        initialCollectionViewId={initialCollectionViewId}
+        recordMap={recordMap}
+        rootPageId={rootPageId}
+      />
     </main>
   );
 }
