@@ -9,9 +9,12 @@ export const metadata: Metadata = {
   applicationName: '대세영어학원',
   description: '도래울 영어 내신 관리와 학생별 학습 진행을 함께 관리하는 대세영어학원입니다.',
   icons: {
-    apple: [{ url: '/daesae-logo.webp', type: 'image/webp' }],
-    icon: [{ url: '/daesae-logo.webp', type: 'image/webp' }],
-    shortcut: [{ url: '/daesae-logo.webp', type: 'image/webp' }]
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' }
+    ],
+    shortcut: [{ url: '/favicon.ico' }]
   },
   metadataBase: new URL('https://daesae.kro.kr'),
   openGraph: {
