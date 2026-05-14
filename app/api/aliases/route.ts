@@ -24,10 +24,6 @@ interface AliasPayload {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const rules = await getAliasRuleMap({
     cookieValue: request.cookies.get(ALIAS_COOKIE_NAME)?.value
   });
@@ -39,10 +35,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const payload = (await request.json()) as AliasPayload;
   const alias = typeof payload.alias === 'string' ? normalizeAlias(payload.alias) : null;
   const notionId =
@@ -84,10 +76,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const alias = normalizeAlias(request.nextUrl.searchParams.get('alias') || '');
 
   if (!alias) {
@@ -126,12 +114,6 @@ export async function DELETE(request: NextRequest) {
   setAliasCookie(response, browserRules);
 
   return response;
-}
-
-function isAuthorized(request: NextRequest) {
-  const password = process.env.DAESAE_SETTINGS_PASSWORD;
-
-  return !password || request.headers.get('x-settings-password') === password;
 }
 
 function setAliasCookie(response: NextResponse, rules: Record<string, string>) {

@@ -44,7 +44,7 @@
 
 .homeLink,
 .primaryButton,
-.secondaryButton,
+.textButton,
 .deleteButton {
   align-items: center;
   border-radius: 6px;
@@ -59,10 +59,16 @@
 }
 
 .homeLink,
-.secondaryButton {
+.textButton {
   background: #fff;
   border: 1px solid rgba(29, 37, 40, 0.16);
   color: #1d2528;
+}
+
+.textButton {
+  background: transparent;
+  min-height: 34px;
+  padding: 0 12px;
 }
 
 .primaryButton {
@@ -89,7 +95,7 @@
   border-radius: 8px;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(150px, 0.8fr) auto minmax(150px, 0.7fr) minmax(260px, 1.4fr) auto;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(260px, 1.4fr) auto;
   padding: 18px;
 }
 
@@ -121,7 +127,7 @@
   align-items: center;
   display: flex;
   gap: 14px;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin: 14px 0 0;
 }
 
@@ -195,7 +201,6 @@
     grid-template-columns: 1fr;
   }
 
-  .secondaryButton,
   .primaryButton {
     width: 100%;
   }
