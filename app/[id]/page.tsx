@@ -4,6 +4,7 @@ import { getBlockValue } from 'notion-utils';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { ALIAS_COOKIE_NAME, resolveNotionPageIdFromPath } from '../../lib/notionAliasRules';
+import { NOTICE_COOKIE_NAME, getActiveNoticeList, type Notice } from '../../lib/notices';
 import NotionPage from './NotionPage';
 
 export const dynamic = 'force-dynamic';
@@ -227,6 +228,16 @@ export default async function Page({
     notFound();
   }
 
+  let notices: Notice[] = [];
+
+  try {
+    notices = await getActiveNoticeList({
+      cookieValue: cookies().get(NOTICE_COOKIE_NAME)?.value
+    });
+  } catch (error) {
+    console.warn('Notice fetch failed', error);
+  }
+
   let recordMap: ExtendedRecordMap;
 
   try {
@@ -246,6 +257,7 @@ export default async function Page({
     <main style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
       <NotionPage
         initialCollectionViewId={initialCollectionViewId}
+        notices={notices}
         recordMap={recordMap}
         rootPageId={rootPageId}
       />

@@ -42,6 +42,35 @@
   margin: 0;
 }
 
+.panel {
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(29, 37, 40, 0.1);
+  border-radius: 8px;
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.sectionHeader {
+  align-items: flex-end;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sectionHeader h2 {
+  font-size: 28px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+
+.sectionHeader p {
+  color: #536064;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .homeLink,
 .primaryButton,
 .textButton,
@@ -109,6 +138,30 @@
   padding: 18px;
 }
 
+.noticeForm {
+  align-items: flex-end;
+  grid-template-areas:
+    "title active actions"
+    "body body body";
+  grid-template-columns: minmax(260px, 1fr) minmax(170px, auto) minmax(140px, auto);
+}
+
+.noticeForm .field:first-child {
+  grid-area: title;
+}
+
+.noticeForm .field:nth-child(2) {
+  grid-area: body;
+}
+
+.noticeForm .checkboxField {
+  grid-area: active;
+}
+
+.noticeForm .formActions {
+  grid-area: actions;
+}
+
 .formActions {
   align-items: center;
   display: flex;
@@ -128,16 +181,48 @@
   font-weight: 800;
 }
 
-.field input {
+.field input,
+.field textarea {
   background: #fff;
   border: 1px solid rgba(29, 37, 40, 0.18);
   border-radius: 6px;
   color: #1d2528;
   font: inherit;
-  min-height: 42px;
   min-width: 0;
-  padding: 0 12px;
   width: 100%;
+}
+
+.field input {
+  height: 42px;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.field textarea {
+  line-height: 1.55;
+  min-height: 42px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.checkboxField {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(29, 37, 40, 0.12);
+  border-radius: 8px;
+  color: #1d2528;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.checkboxField input {
+  accent-color: #f27721;
+  height: 16px;
+  width: 16px;
 }
 
 .statusBar {
@@ -176,7 +261,7 @@
   margin-top: 26px;
 }
 
-.listHeader h2 {
+.listHeader h3 {
   font-size: 24px;
   line-height: 1.2;
   margin: 0;
@@ -232,7 +317,7 @@
   min-width: 0;
 }
 
-.rule h3 {
+.rule h4 {
   font-size: 22px;
   line-height: 1.2;
   margin: 0 0 8px;
@@ -264,9 +349,58 @@
   justify-content: flex-end;
 }
 
+.noticeTitleRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.noticeTitleRow h4 {
+  margin: 0;
+}
+
+.badgeActive,
+.badgeMuted {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 24px;
+  padding: 0 9px;
+}
+
+.badgeActive {
+  background: #e7f6ea;
+  color: #1c7131;
+}
+
+.badgeMuted {
+  background: #ecefed;
+  color: #647074;
+}
+
+.noticeBody {
+  color: #1d2528 !important;
+  font-size: 15px !important;
+  margin-bottom: 8px !important;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
-  .form {
+  .form,
+  .noticeForm {
+    grid-template-areas: none;
     grid-template-columns: 1fr;
+  }
+
+  .noticeForm .field:first-child,
+  .noticeForm .field:nth-child(2),
+  .noticeForm .checkboxField,
+  .noticeForm .formActions {
+    grid-area: auto;
   }
 
   .primaryButton,
@@ -285,8 +419,17 @@
     flex-direction: column;
   }
 
+  .panel {
+    padding: 14px;
+  }
+
   .header h1 {
     font-size: 32px;
+  }
+
+  .sectionHeader {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .listHeader {

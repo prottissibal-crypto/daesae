@@ -27,6 +27,7 @@ import {
   getTextContent
 } from 'notion-utils';
 import { NotionRenderer } from 'react-notion-x';
+import type { Notice } from '../../lib/notices';
 
 type CollectionBlock = CollectionViewBlock | CollectionViewPageBlock | PageBlock;
 
@@ -1355,12 +1356,14 @@ function formatMonth(monthKey: string) {
 
 interface NotionPageProps {
   initialCollectionViewId?: string;
+  notices?: Notice[];
   recordMap: ExtendedRecordMap;
   rootPageId: string;
 }
 
 export default function NotionPage({
   initialCollectionViewId,
+  notices = [],
   recordMap,
   rootPageId
 }: NotionPageProps) {
@@ -1422,6 +1425,16 @@ export default function NotionPage({
       >
         {darkMode ? 'Light' : 'Dark'}
       </button>
+      {notices.length > 0 && (
+        <section className="notion-notice-stack" aria-label="대세영어학원 공지">
+          {notices.map((notice) => (
+            <article className="notion-notice" key={notice.id}>
+              <strong>{notice.title}</strong>
+              <p>{notice.body}</p>
+            </article>
+          ))}
+        </section>
+      )}
       <NotionRenderer
         recordMap={recordMap}
         blockId={rootPageId}
