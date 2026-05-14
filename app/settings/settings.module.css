@@ -46,6 +46,7 @@
 .primaryButton,
 .textButton,
 .editButton,
+.copyButton,
 .deleteButton {
   align-items: center;
   border-radius: 6px;
@@ -61,7 +62,8 @@
 
 .homeLink,
 .textButton,
-.editButton {
+.editButton,
+.copyButton {
   background: #fff;
   border: 1px solid rgba(29, 37, 40, 0.16);
   color: #1d2528;
@@ -97,7 +99,7 @@
 }
 
 .form {
-  align-items: end;
+  align-items: flex-end;
   background: #fff;
   border: 1px solid rgba(29, 37, 40, 0.12);
   border-radius: 8px;
@@ -166,10 +168,48 @@
   padding: 12px 14px;
 }
 
+.listHeader {
+  align-items: flex-end;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-top: 26px;
+}
+
+.listHeader h2 {
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.searchField {
+  display: grid;
+  gap: 7px;
+  min-width: min(320px, 100%);
+}
+
+.searchField span {
+  color: #6a7478;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.searchField input {
+  background: #fff;
+  border: 1px solid rgba(29, 37, 40, 0.18);
+  border-radius: 6px;
+  color: #1d2528;
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  padding: 0 12px;
+  width: 100%;
+}
+
 .rules {
   display: grid;
   gap: 12px;
-  margin-top: 22px;
+  margin-top: 12px;
 }
 
 .rule,
@@ -192,7 +232,7 @@
   min-width: 0;
 }
 
-.rule h2 {
+.rule h3 {
   font-size: 22px;
   line-height: 1.2;
   margin: 0 0 8px;
@@ -224,36 +264,6 @@
   justify-content: flex-end;
 }
 
-.qrLink,
-.qrPlaceholder {
-  align-items: center;
-  background: #fff;
-  border: 1px solid rgba(29, 37, 40, 0.12);
-  border-radius: 8px;
-  color: #536064;
-  display: grid;
-  flex: 0 0 auto;
-  font-size: 12px;
-  font-weight: 700;
-  gap: 7px;
-  justify-items: center;
-  padding: 8px;
-  text-align: center;
-  text-decoration: none;
-}
-
-.qrLink img {
-  display: block;
-  height: 96px;
-  image-rendering: pixelated;
-  width: 96px;
-}
-
-.qrPlaceholder {
-  height: 124px;
-  width: 114px;
-}
-
 @media (max-width: 900px) {
   .form {
     grid-template-columns: 1fr;
@@ -279,8 +289,14 @@
     font-size: 32px;
   }
 
+  .listHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .homeLink,
   .editButton,
+  .copyButton,
   .deleteButton {
     width: 100%;
   }
@@ -293,10 +309,5 @@
 
   .ruleActions {
     justify-content: stretch;
-  }
-
-  .qrLink,
-  .qrPlaceholder {
-    width: 100%;
   }
 }
