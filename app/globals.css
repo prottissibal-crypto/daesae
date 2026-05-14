@@ -35,6 +35,10 @@ main {
   width: 100%;
 }
 
+.notion-viewer .notion {
+  --notion-max-width: min(960px, calc(100vw - 72px));
+}
+
 .notion-viewer .notion-app,
 .notion-viewer .notion-frame,
 .notion-viewer .notion-page-scroller,
@@ -46,6 +50,64 @@ main {
 
 .notion-viewer .notion-page {
   max-width: min(var(--notion-max-width), 100vw);
+}
+
+.notion-viewer .notion-page-cover,
+.notion-viewer .notion-page-cover-wrapper,
+.notion-viewer .notion-page-cover-wrapper span,
+.notion-viewer .notion-page-cover-wrapper img {
+  height: clamp(190px, 18vw, 260px) !important;
+  max-height: clamp(190px, 18vw, 260px) !important;
+  min-height: clamp(190px, 18vw, 260px) !important;
+}
+
+.notion-viewer .notion-page-has-cover {
+  padding-top: 62px;
+}
+
+.notion-viewer .notion-page-icon-hero {
+  justify-content: flex-start;
+  left: calc(min(16px, 8vw));
+}
+
+.notion-viewer .notion-page-icon-hero.notion-page-icon-image,
+.notion-viewer .notion-page-icon-hero.notion-page-icon-span {
+  margin-left: 0;
+}
+
+.notion-viewer .notion-page-has-cover .notion-page-icon-hero.notion-page-icon-image {
+  height: 74px;
+  margin-left: 0;
+  top: -37px;
+  width: 74px;
+}
+
+.notion-viewer .notion-page-icon-hero.notion-page-icon-image .notion-page-icon {
+  border-radius: 10px;
+}
+
+.notion-viewer .notion-title {
+  font-size: clamp(32px, 2.6vw, 40px);
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+
+.notion-viewer .notion-page-content-has-aside {
+  display: block;
+  width: 100%;
+}
+
+.notion-viewer .notion-page-content-has-aside .notion-page-content-inner {
+  max-width: 100%;
+  width: 100%;
+}
+
+.notion-viewer .notion-aside {
+  display: none !important;
+}
+
+.notion-viewer .notion-header-anchor {
+  top: -72px;
 }
 
 .notion-viewer .notion-collection,
@@ -79,6 +141,93 @@ main {
 .notion-viewer .notion-collection-group {
   max-width: 100%;
   min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .notion-viewer .notion {
+    --notion-max-width: calc(100vw - 28px);
+  }
+
+  .notion-viewer .notion-page {
+    padding-left: 18px;
+    padding-right: 18px;
+    width: 100%;
+  }
+
+  .notion-viewer .notion-page-cover,
+  .notion-viewer .notion-page-cover-wrapper,
+  .notion-viewer .notion-page-cover-wrapper span,
+  .notion-viewer .notion-page-cover-wrapper img {
+    height: 170px !important;
+    max-height: 170px !important;
+    min-height: 170px !important;
+  }
+
+  .notion-viewer .notion-page-has-cover {
+    padding-top: 52px;
+  }
+
+  .notion-viewer .notion-page-has-cover .notion-page-icon-hero.notion-page-icon-image {
+    height: 64px;
+    margin-left: 0;
+    top: -32px;
+    width: 64px;
+  }
+
+  .notion-viewer .notion-title {
+    font-size: 24px;
+    line-height: 1.22;
+  }
+
+  .notion-viewer .notion-h,
+  .notion-viewer .notion-toggle summary {
+    font-size: 18px;
+    line-height: 1.35;
+  }
+
+  .notion-viewer .notion-callout {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .notion-viewer .notion-title,
+  .notion-viewer .notion-title *,
+  .notion-viewer .notion-text,
+  .notion-viewer .notion-text *,
+  .notion-viewer .notion-h,
+  .notion-viewer .notion-h *,
+  .notion-viewer .notion-quote,
+  .notion-viewer .notion-quote *,
+  .notion-viewer .notion-list,
+  .notion-viewer .notion-list *,
+  .notion-viewer .notion-page-content-inner,
+  .notion-viewer .notion-toggle summary,
+  .notion-viewer .notion-toggle summary *,
+  .notion-viewer .notion-callout,
+  .notion-viewer .notion-callout *,
+  .notion-viewer .notion-callout-text,
+  .notion-viewer .notion-callout-text * {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .notion-viewer .notion-callout,
+  .notion-viewer .notion-page-content-inner,
+  .notion-viewer .notion-quote,
+  .notion-viewer .notion-toggle {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .notion-viewer .notion-callout *,
+  .notion-viewer .notion-quote *,
+  .notion-viewer .notion-toggle summary,
+  .notion-viewer .notion-toggle summary * {
+    white-space: normal;
+  }
 }
 
 .theme-toggle {

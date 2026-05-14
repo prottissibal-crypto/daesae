@@ -472,14 +472,15 @@ function CalendarCollectionView({
 
       <style jsx>{`
         .notion-calendar-fallback {
-          max-width: 100%;
+          align-self: stretch;
+          max-width: calc(100vw - 72px);
           min-width: 0;
           overflow-x: auto;
           overflow-y: hidden;
           padding: 8px 0 24px;
           scrollbar-gutter: stable;
           -webkit-overflow-scrolling: touch;
-          width: 100%;
+          width: var(--notion-max-width);
         }
 
         .notion-calendar-toolbar {
@@ -632,7 +633,14 @@ function CalendarCollectionView({
         }
 
         @media (max-width: 860px) {
+          .notion-calendar-fallback {
+            max-width: 100%;
+            width: 100%;
+          }
+
           .notion-calendar-grid {
+            grid-template-columns: repeat(7, 112px);
+            min-width: 784px;
             width: 784px;
           }
         }
@@ -1382,6 +1390,22 @@ export default function NotionPage({
     document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light';
   }, [darkMode]);
 
+  useEffect(() => {
+    if (!window.location.hash) {
+      return;
+    }
+
+    const restoreTop = () => window.scrollTo({ left: 0, top: 0 });
+    restoreTop();
+
+    const timers = [
+      window.setTimeout(restoreTop, 150),
+      window.setTimeout(restoreTop, 700)
+    ];
+
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [rootPageId]);
+
   const onToggleTheme = () => {
     const nextDarkMode = !darkMode;
     setDarkMode(nextDarkMode);
@@ -1414,7 +1438,6 @@ export default function NotionPage({
           Modal
         }}
         showCollectionViewDropdown
-        showTableOfContents
       />
     </div>
   );
