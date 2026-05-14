@@ -2,6 +2,7 @@ import type { ExtendedRecordMap } from 'notion-types';
 import { NotionAPI } from 'notion-client';
 import { getBlockValue } from 'notion-utils';
 import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { ALIAS_COOKIE_NAME, resolveNotionPageIdFromPath } from '../../lib/notionAliasRules';
 import NotionPage from './NotionPage';
 
@@ -18,11 +19,21 @@ interface SearchParams {
   v?: string | string[];
 }
 
+type RecordMapWithAssets = ExtendedRecordMap & {
+  custom_emoji?: Record<string, unknown>;
+  team?: Record<string, unknown>;
+};
+
+interface CustomEmoji {
+  url?: string;
+}
+
 async function fetchNotionPage(id: string): Promise<ExtendedRecordMap> {
   const notion = new NotionAPI();
   const recordMap = await notion.getPage(id);
 
   await resolveAliasTargets(recordMap, notion);
+  normalizeCustomEmojiImages(recordMap);
 
   return recordMap;
 }
@@ -107,6 +118,18 @@ function mergeRecordMaps(recordMap: ExtendedRecordMap, sourceRecordMap: Extended
     ...recordMap.signed_urls
   };
 
+  const targetRecordMap = recordMap as RecordMapWithAssets;
+  const sourceRecordMapWithAssets = sourceRecordMap as RecordMapWithAssets;
+
+  targetRecordMap.custom_emoji = {
+    ...sourceRecordMapWithAssets.custom_emoji,
+    ...targetRecordMap.custom_emoji
+  };
+  targetRecordMap.team = {
+    ...sourceRecordMapWithAssets.team,
+    ...targetRecordMap.team
+  };
+
   for (const [collectionId, sourceCollectionQuery] of Object.entries(
     sourceRecordMap.collection_query || {}
   )) {
@@ -115,6 +138,65 @@ function mergeRecordMaps(recordMap: ExtendedRecordMap, sourceRecordMap: Extended
       ...recordMap.collection_query[collectionId]
     };
   }
+}
+
+function normalizeCustomEmojiImages(recordMap: ExtendedRecordMap) {
+  for (const blockBox of Object.values(recordMap.block || {})) {
+    const block = getBlockValue(blockBox);
+    const blockFormat = block?.format as { page_icon?: string } | undefined;
+    const pageIcon = blockFormat?.page_icon;
+
+    if (blockFormat && typeof pageIcon === 'string') {
+      blockFormat.page_icon = resolveCustomEmojiUrl(pageIcon, recordMap);
+    }
+  }
+
+  for (const collectionBox of Object.values(recordMap.collection || {})) {
+    const collection = getNotionMapValue<{ icon?: string }>(collectionBox);
+
+    if (typeof collection?.icon === 'string') {
+      collection.icon = resolveCustomEmojiUrl(collection.icon, recordMap);
+    }
+  }
+}
+
+function resolveCustomEmojiUrl(value: string, recordMap: ExtendedRecordMap) {
+  if (!value.startsWith('notion://custom_emoji/')) {
+    return value;
+  }
+
+  const emojiId = value.split('/').pop();
+  const emoji = getCustomEmoji(recordMap, emojiId);
+
+  return emoji?.url || value;
+}
+
+function getCustomEmoji(recordMap: ExtendedRecordMap, emojiId?: string) {
+  if (!emojiId) {
+    return undefined;
+  }
+
+  const customEmojiMap = (recordMap as RecordMapWithAssets).custom_emoji || {};
+  const normalizedEmojiId = emojiId.replace(/-/g, '').toLowerCase();
+  const mapKey = Object.keys(customEmojiMap).find(
+    (key) => key.replace(/-/g, '').toLowerCase() === normalizedEmojiId
+  );
+
+  return mapKey ? getNotionMapValue<CustomEmoji>(customEmojiMap[mapKey]) : undefined;
+}
+
+function getNotionMapValue<T>(box: unknown): T | undefined {
+  if (!box || typeof box !== 'object' || !('value' in box)) {
+    return undefined;
+  }
+
+  const value = (box as { value?: unknown }).value;
+
+  if (value && typeof value === 'object' && 'value' in value) {
+    return (value as { value?: T }).value;
+  }
+
+  return value as T;
 }
 
 function getSearchParamValue(value?: string | string[]) {
@@ -142,16 +224,23 @@ export default async function Page({
   const initialCollectionViewId = getSearchParamValue(searchParams?.v);
 
   if (!notionId) {
-    return (
-      <main style={{ minHeight: '100vh', padding: '4rem', fontFamily: 'system-ui, sans-serif' }}>
-        <h1>잘못된 Notion page id입니다.</h1>
-        <p>URL 끝에 32자리 Notion id, 하이픈 포함 UUID, 또는 등록된 규칙을 넣어 주세요.</p>
-      </main>
-    );
+    notFound();
   }
 
-  const recordMap = await fetchNotionPage(notionId);
-  const rootPageId = getRecordMapBlockId(recordMap, notionId) || notionId;
+  let recordMap: ExtendedRecordMap;
+
+  try {
+    recordMap = await fetchNotionPage(notionId);
+  } catch (error) {
+    console.warn('Notion page fetch failed', notionId, error);
+    notFound();
+  }
+
+  const rootPageId = getRecordMapBlockId(recordMap, notionId);
+
+  if (!rootPageId) {
+    notFound();
+  }
 
   return (
     <main style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
