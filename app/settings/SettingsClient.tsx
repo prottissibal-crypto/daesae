@@ -1,5 +1,6 @@
 'use client';
 
+import QRCode from 'qrcode';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import styles from './settings.module.css';
 
@@ -22,6 +23,7 @@ const storageLabels = {
 
 export default function SettingsClient() {
   const [alias, setAlias] = useState('');
+  const [editingAlias, setEditingAlias] = useState<string | null>(null);
   const [notionId, setNotionId] = useState('');
   const [rules, setRules] = useState<AliasRule[]>([]);
   const [storageMode, setStorageMode] = useState<AliasResponse['storageMode']>();
@@ -62,6 +64,12 @@ export default function SettingsClient() {
     void loadRules();
   }, []);
 
+  const resetForm = () => {
+    setAlias('');
+    setEditingAlias(null);
+    setNotionId('');
+  };
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSaving(true);
@@ -84,14 +92,20 @@ export default function SettingsClient() {
 
       setRules(data.rules || []);
       setStorageMode(data.storageMode);
-      setAlias('');
-      setNotionId('');
-      setMessage('저장됐어요.');
+      setMessage(editingAlias ? '수정됐어요.' : '저장됐어요.');
+      resetForm();
     } catch {
-      setMessage('저장하지 못했어요.');
+      setMessage(editingAlias ? '수정하지 못했어요.' : '저장하지 못했어요.');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const onEdit = (rule: AliasRule) => {
+    setAlias(rule.alias);
+    setEditingAlias(rule.alias);
+    setNotionId(rule.notionId);
+    setMessage(`${rule.alias} 수정 중이에요.`);
   };
 
   const onDelete = async (ruleAlias: string) => {
@@ -111,6 +125,10 @@ export default function SettingsClient() {
       setRules(data.rules || []);
       setStorageMode(data.storageMode);
       setMessage('삭제됐어요.');
+
+      if (editingAlias === ruleAlias) {
+        resetForm();
+      }
     } catch {
       setMessage('삭제하지 못했어요.');
     }
@@ -134,6 +152,7 @@ export default function SettingsClient() {
             <span>짧은 주소</span>
             <input
               autoCapitalize="characters"
+              disabled={Boolean(editingAlias)}
               onChange={(event) => setAlias(event.target.value)}
               placeholder="H1ABTT"
               required
@@ -151,9 +170,16 @@ export default function SettingsClient() {
             />
           </label>
 
-          <button className={styles.primaryButton} disabled={isSaving} type="submit">
-            {isSaving ? '저장 중' : '저장'}
-          </button>
+          <div className={styles.formActions}>
+            <button className={styles.primaryButton} disabled={isSaving} type="submit">
+              {isSaving ? '저장 중' : editingAlias ? '수정 저장' : '저장'}
+            </button>
+            {editingAlias && (
+              <button className={styles.textButton} onClick={resetForm} type="button">
+                취소
+              </button>
+            )}
+          </div>
         </form>
 
         <div className={styles.statusBar}>
@@ -172,27 +198,79 @@ export default function SettingsClient() {
           {isLoading ? (
             <p className={styles.empty}>불러오는 중이에요.</p>
           ) : rules.length ? (
-            rules.map((rule) => (
-              <article className={styles.rule} key={rule.alias}>
-                <div>
-                  <h2>{rule.alias}</h2>
-                  <a href={`/${rule.alias}`}>{`${origin}/${rule.alias}`}</a>
-                  <p>{rule.notionId}</p>
-                </div>
-                <button
-                  className={styles.deleteButton}
-                  onClick={() => onDelete(rule.alias)}
-                  type="button"
-                >
-                  삭제
-                </button>
-              </article>
-            ))
+            rules.map((rule) => {
+              const ruleUrl = `${origin}/${rule.alias}`;
+
+              return (
+                <article className={styles.rule} key={rule.alias}>
+                  <QrCodeImage alias={rule.alias} url={ruleUrl} />
+                  <div className={styles.ruleMain}>
+                    <h2>{rule.alias}</h2>
+                    <a href={`/${rule.alias}`}>{ruleUrl}</a>
+                    <p>{rule.notionId}</p>
+                  </div>
+                  <div className={styles.ruleActions}>
+                    <button className={styles.editButton} onClick={() => onEdit(rule)} type="button">
+                      수정
+                    </button>
+                    <button
+                      className={styles.deleteButton}
+                      onClick={() => onDelete(rule.alias)}
+                      type="button"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </article>
+              );
+            })
           ) : (
             <p className={styles.empty}>아직 만든 주소가 없어요.</p>
           )}
         </section>
       </section>
     </main>
+  );
+}
+
+function QrCodeImage({ alias, url }: { alias: string; url: string }) {
+  const [src, setSrc] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    QRCode.toDataURL(url, {
+      color: {
+        dark: '#1d2528',
+        light: '#ffffff'
+      },
+      margin: 1,
+      scale: 6
+    })
+      .then((dataUrl) => {
+        if (isMounted) {
+          setSrc(dataUrl);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setSrc('');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [url]);
+
+  if (!src) {
+    return <div className={styles.qrPlaceholder}>QR</div>;
+  }
+
+  return (
+    <a className={styles.qrLink} download={`${alias}-qr.png`} href={src}>
+      <img alt={`${alias} QR`} height="96" src={src} width="96" />
+      <span>QR 저장</span>
+    </a>
   );
 }

@@ -45,6 +45,7 @@
 .homeLink,
 .primaryButton,
 .textButton,
+.editButton,
 .deleteButton {
   align-items: center;
   border-radius: 6px;
@@ -59,7 +60,8 @@
 }
 
 .homeLink,
-.textButton {
+.textButton,
+.editButton {
   background: #fff;
   border: 1px solid rgba(29, 37, 40, 0.16);
   color: #1d2528;
@@ -82,6 +84,12 @@
   opacity: 0.68;
 }
 
+.field input:disabled {
+  background: #f4f6f2;
+  color: #536064;
+  cursor: not-allowed;
+}
+
 .deleteButton {
   background: transparent;
   border: 1px solid rgba(148, 54, 54, 0.34);
@@ -95,8 +103,15 @@
   border-radius: 8px;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(150px, 0.7fr) minmax(260px, 1.4fr) auto;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(260px, 1.4fr) minmax(150px, auto);
   padding: 18px;
+}
+
+.formActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .field {
@@ -172,6 +187,11 @@
   justify-content: space-between;
 }
 
+.ruleMain {
+  flex: 1;
+  min-width: 0;
+}
+
 .rule h2 {
   font-size: 22px;
   line-height: 1.2;
@@ -196,12 +216,51 @@
   overflow-wrap: anywhere;
 }
 
+.ruleActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.qrLink,
+.qrPlaceholder {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(29, 37, 40, 0.12);
+  border-radius: 8px;
+  color: #536064;
+  display: grid;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 7px;
+  justify-items: center;
+  padding: 8px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.qrLink img {
+  display: block;
+  height: 96px;
+  image-rendering: pixelated;
+  width: 96px;
+}
+
+.qrPlaceholder {
+  height: 124px;
+  width: 114px;
+}
+
 @media (max-width: 900px) {
   .form {
     grid-template-columns: 1fr;
   }
 
-  .primaryButton {
+  .primaryButton,
+  .formActions {
     width: 100%;
   }
 }
@@ -221,6 +280,7 @@
   }
 
   .homeLink,
+  .editButton,
   .deleteButton {
     width: 100%;
   }
@@ -229,5 +289,14 @@
   .rule {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .ruleActions {
+    justify-content: stretch;
+  }
+
+  .qrLink,
+  .qrPlaceholder {
+    width: 100%;
   }
 }
