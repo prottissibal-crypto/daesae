@@ -153,10 +153,22 @@ main {
   min-width: 0;
 }
 
+.notion-viewer .notion-board,
+.notion-viewer .notion-gallery-view,
+.notion-viewer .notion-table-view {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
 .notion-viewer .notion-collection-view-tabs-row {
   overflow-x: auto;
   padding-left: max(0px, env(safe-area-inset-left));
   padding-right: max(0px, env(safe-area-inset-right));
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .notion-viewer .notion-table {
@@ -178,6 +190,22 @@ main {
 .notion-viewer .notion-collection-group {
   max-width: 100%;
   min-width: 0;
+}
+
+.notion-image-fallback {
+  align-items: center;
+  background: var(--bg-color-1, rgba(55, 53, 47, 0.06));
+  border: 1px solid var(--bg-color-2, rgba(55, 53, 47, 0.16));
+  border-radius: 6px;
+  color: var(--fg-color-5, rgba(55, 53, 47, 0.65));
+  display: flex;
+  font-size: 14px;
+  justify-content: center;
+  line-height: 1.45;
+  min-height: 120px;
+  padding: 16px;
+  text-align: center;
+  width: 100%;
 }
 
 @media (max-width: 720px) {

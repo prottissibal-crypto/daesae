@@ -61,7 +61,10 @@ export function normalizeNoticeInput(value: unknown): NoticeInput | null {
 }
 
 export async function getNoticeList(options: NoticeOptions = {}) {
-  return mergeNoticeLists(await getStoredNoticeList(), decodeNoticeCookie(options.cookieValue));
+  return mergeNoticeLists(
+    await getReadableStoredNoticeList(),
+    decodeNoticeCookie(options.cookieValue)
+  );
 }
 
 export async function getActiveNoticeList(options: NoticeOptions = {}) {
@@ -218,6 +221,15 @@ async function getStoredNoticeList() {
   }
 
   return readFileNoticeList();
+}
+
+async function getReadableStoredNoticeList() {
+  try {
+    return await getStoredNoticeList();
+  } catch (error) {
+    console.warn('Notice storage read failed', error);
+    return [];
+  }
 }
 
 async function writeStoredNoticeList(notices: Notice[]) {

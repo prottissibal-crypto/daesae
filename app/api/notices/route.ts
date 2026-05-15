@@ -37,12 +37,20 @@ export async function POST(request: NextRequest) {
   }
 
   if (hasPersistentNoticeStorage()) {
-    const notices = await upsertPersistentNotice(input);
+    try {
+      const notices = await upsertPersistentNotice(input);
 
-    return NextResponse.json({
-      notices,
-      storageMode: getNoticeStorageMode()
-    });
+      return NextResponse.json({
+        notices,
+        storageMode: getNoticeStorageMode()
+      });
+    } catch (error) {
+      console.warn('Notice save failed', error);
+      return NextResponse.json(
+        { error: 'Notice storage is temporarily unavailable' },
+        { status: 503 }
+      );
+    }
   }
 
   const browserNotices = decodeNoticeCookie(request.cookies.get(NOTICE_COOKIE_NAME)?.value);
@@ -65,19 +73,27 @@ export async function DELETE(request: NextRequest) {
   }
 
   if (hasPersistentNoticeStorage()) {
-    const notices = await removePersistentNotice(id);
-    const browserNotices = removeNoticeFromList(
-      decodeNoticeCookie(request.cookies.get(NOTICE_COOKIE_NAME)?.value),
-      id
-    );
-    const response = NextResponse.json({
-      notices,
-      storageMode: getNoticeStorageMode()
-    });
+    try {
+      const notices = await removePersistentNotice(id);
+      const browserNotices = removeNoticeFromList(
+        decodeNoticeCookie(request.cookies.get(NOTICE_COOKIE_NAME)?.value),
+        id
+      );
+      const response = NextResponse.json({
+        notices,
+        storageMode: getNoticeStorageMode()
+      });
 
-    setNoticeCookie(response, browserNotices);
+      setNoticeCookie(response, browserNotices);
 
-    return response;
+      return response;
+    } catch (error) {
+      console.warn('Notice delete failed', error);
+      return NextResponse.json(
+        { error: 'Notice storage is temporarily unavailable' },
+        { status: 503 }
+      );
+    }
   }
 
   const nextBrowserNotices = removeNoticeFromList(

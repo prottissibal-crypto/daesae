@@ -114,8 +114,10 @@ function Collection(props: CollectionWithInitialViewProps) {
 
   const recordMap = ctx.recordMap;
   const viewIds = block.view_ids || [];
+  const collectionId = getBlockCollectionId(block, recordMap) || undefined;
   const requestedViewId = findMatchingViewId(viewIds, initialCollectionViewId);
-  const defaultViewId = requestedViewId || viewIds[0];
+  const firstViewIdWithData = findFirstCollectionViewIdWithData(recordMap, collectionId, viewIds);
+  const defaultViewId = requestedViewId || firstViewIdWithData || viewIds[0];
   const storageKey = `notion-collection-view:${block.id}`;
   const [selectedViewId, setSelectedViewId] = useState(defaultViewId);
 
@@ -126,24 +128,24 @@ function Collection(props: CollectionWithInitialViewProps) {
     }
 
     const savedViewId = window.localStorage.getItem(storageKey);
-    if (savedViewId && viewIds.includes(savedViewId)) {
+    if (
+      savedViewId &&
+      viewIds.includes(savedViewId) &&
+      hasCollectionViewData(recordMap, collectionId, savedViewId)
+    ) {
       setSelectedViewId(savedViewId);
     } else {
       setSelectedViewId(defaultViewId);
     }
-  }, [defaultViewId, requestedViewId, storageKey, viewIds]);
+  }, [collectionId, defaultViewId, recordMap, requestedViewId, storageKey, viewIds]);
 
-  const collectionId = getBlockCollectionId(block, recordMap);
   const collection = collectionId
     ? getBlockValue(recordMap.collection[collectionId])
     : undefined;
   const collectionView = selectedViewId
     ? getBlockValue(recordMap.collection_view[selectedViewId])
     : undefined;
-  const collectionData =
-    collectionId && selectedViewId
-      ? recordMap.collection_query[collectionId]?.[selectedViewId]
-      : undefined;
+  const collectionData = getCollectionViewData(recordMap, collectionId, selectedViewId);
 
   const onChangeView = (viewId: string) => {
     setSelectedViewId(viewId);
@@ -315,6 +317,38 @@ function findMatchingViewId(viewIds: string[], requestedViewId?: string) {
   }
 
   return viewIds.find((viewId) => normalizeNotionId(viewId) === normalizedRequestedViewId);
+}
+
+function findFirstCollectionViewIdWithData(
+  recordMap: ExtendedRecordMap,
+  collectionId: string | undefined,
+  viewIds: string[]
+) {
+  return viewIds.find((viewId) => hasCollectionViewData(recordMap, collectionId, viewId));
+}
+
+function hasCollectionViewData(
+  recordMap: ExtendedRecordMap,
+  collectionId: string | undefined,
+  viewId?: string
+) {
+  if (!collectionId || !viewId) {
+    return false;
+  }
+
+  return Boolean(getCollectionViewData(recordMap, collectionId, viewId));
+}
+
+function getCollectionViewData(
+  recordMap: ExtendedRecordMap,
+  collectionId: string | undefined,
+  viewId?: string
+) {
+  if (!collectionId || !viewId) {
+    return undefined;
+  }
+
+  return recordMap.collection_query[collectionId]?.[viewId];
 }
 
 function normalizeNotionId(value?: string) {
@@ -1392,6 +1426,66 @@ export default function NotionPage({
   useEffect(() => {
     document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light';
   }, [darkMode]);
+
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>('.notion-viewer');
+
+    if (!root) {
+      return;
+    }
+
+    const applyImageFallback = (image: HTMLImageElement) => {
+      if (image.dataset.daesaeImageFallback === 'true') {
+        return;
+      }
+
+      image.dataset.daesaeImageFallback = 'true';
+      image.style.opacity = '0';
+
+      const rect = image.getBoundingClientRect();
+      const isSmallImage =
+        rect.width < 96 ||
+        rect.height < 72 ||
+        image.classList.contains('notion-page-icon') ||
+        image.classList.contains('notion-page-title-icon');
+
+      if (isSmallImage || image.nextElementSibling?.classList.contains('notion-image-fallback')) {
+        return;
+      }
+
+      const fallback = document.createElement('span');
+      fallback.className = 'notion-image-fallback';
+      fallback.textContent = image.alt
+        ? `이미지를 불러오지 못했어요: ${image.alt}`
+        : '이미지를 불러오지 못했어요.';
+      image.insertAdjacentElement('afterend', fallback);
+    };
+    const scanBrokenImages = () => {
+      root.querySelectorAll<HTMLImageElement>('img').forEach((image) => {
+        if (image.complete && image.naturalWidth === 0) {
+          applyImageFallback(image);
+        }
+      });
+    };
+    const onImageError = (event: Event) => {
+      if (event.target instanceof HTMLImageElement) {
+        applyImageFallback(event.target);
+      }
+    };
+    const timers = [
+      window.setTimeout(scanBrokenImages, 800),
+      window.setTimeout(scanBrokenImages, 2500),
+      window.setTimeout(scanBrokenImages, 6000)
+    ];
+
+    root.addEventListener('error', onImageError, true);
+    scanBrokenImages();
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      root.removeEventListener('error', onImageError, true);
+    };
+  }, [rootPageId]);
 
   useEffect(() => {
     const openParentToggles = (target: HTMLElement) => {

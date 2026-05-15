@@ -5,7 +5,19 @@ export const ALIAS_COOKIE_NAME = 'daesae_alias_rules';
 
 const ALIAS_STORE_KEY = 'daesae:notion-aliases';
 const ALIAS_FILE_PATH = path.join(process.cwd(), 'data', 'notion-aliases.json');
-const RESERVED_ALIASES = new Set(['api', 'naver-blog', 'settings']);
+const RESERVED_ALIASES = new Set([
+  '_next',
+  'api',
+  'apple-icon',
+  'daesae-logo',
+  'favicon',
+  'icon',
+  'manifest',
+  'naver-blog',
+  'robots',
+  'settings',
+  'sitemap'
+]);
 const NOTION_PAGE_ID_AT_END =
   /([0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
 
@@ -68,7 +80,7 @@ export async function resolveNotionPageIdFromPath(pathValue: string, options: Al
 export async function getAliasRuleMap(options: AliasRuleOptions = {}) {
   return normalizeAliasRuleMap({
     ...getEnvAliasRuleMap(),
-    ...(await getStoredAliasRuleMap()),
+    ...(await getReadableStoredAliasRuleMap()),
     ...decodeAliasCookie(options.cookieValue)
   });
 }
@@ -188,6 +200,15 @@ async function getStoredAliasRuleMap() {
   }
 
   return readFileAliasRuleMap();
+}
+
+async function getReadableStoredAliasRuleMap() {
+  try {
+    return await getStoredAliasRuleMap();
+  } catch (error) {
+    console.warn('Alias storage read failed', error);
+    return {};
+  }
 }
 
 async function writeStoredAliasRuleMap(rules: AliasRuleMap) {

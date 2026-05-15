@@ -48,18 +48,26 @@ export async function POST(request: NextRequest) {
   }
 
   if (hasPersistentAliasStorage()) {
-    const storedRules = await upsertPersistentAliasRule(alias, notionId);
-    const rules = mergeAliasRules(
-      await getAliasRuleMap({
-        cookieValue: request.cookies.get(ALIAS_COOKIE_NAME)?.value
-      }),
-      storedRules
-    );
+    try {
+      const storedRules = await upsertPersistentAliasRule(alias, notionId);
+      const rules = mergeAliasRules(
+        await getAliasRuleMap({
+          cookieValue: request.cookies.get(ALIAS_COOKIE_NAME)?.value
+        }),
+        storedRules
+      );
 
-    return NextResponse.json({
-      rules: toAliasRuleList(rules),
-      storageMode: getAliasStorageMode()
-    });
+      return NextResponse.json({
+        rules: toAliasRuleList(rules),
+        storageMode: getAliasStorageMode()
+      });
+    } catch (error) {
+      console.warn('Alias save failed', error);
+      return NextResponse.json(
+        { error: 'Alias storage is temporarily unavailable' },
+        { status: 503 }
+      );
+    }
   }
 
   const browserRules = decodeAliasCookie(request.cookies.get(ALIAS_COOKIE_NAME)?.value);
@@ -83,23 +91,31 @@ export async function DELETE(request: NextRequest) {
   }
 
   if (hasPersistentAliasStorage()) {
-    const storedRules = await removePersistentAliasRule(alias);
-    const browserRules = decodeAliasCookie(request.cookies.get(ALIAS_COOKIE_NAME)?.value);
-    delete browserRules[alias];
-    const rules = mergeAliasRules(
-      await getAliasRuleMap({
-        cookieValue: encodeAliasCookie(browserRules)
-      }),
-      storedRules
-    );
-    const response = NextResponse.json({
-      rules: toAliasRuleList(rules),
-      storageMode: getAliasStorageMode()
-    });
+    try {
+      const storedRules = await removePersistentAliasRule(alias);
+      const browserRules = decodeAliasCookie(request.cookies.get(ALIAS_COOKIE_NAME)?.value);
+      delete browserRules[alias];
+      const rules = mergeAliasRules(
+        await getAliasRuleMap({
+          cookieValue: encodeAliasCookie(browserRules)
+        }),
+        storedRules
+      );
+      const response = NextResponse.json({
+        rules: toAliasRuleList(rules),
+        storageMode: getAliasStorageMode()
+      });
 
-    setAliasCookie(response, browserRules);
+      setAliasCookie(response, browserRules);
 
-    return response;
+      return response;
+    } catch (error) {
+      console.warn('Alias delete failed', error);
+      return NextResponse.json(
+        { error: 'Alias storage is temporarily unavailable' },
+        { status: 503 }
+      );
+    }
   }
 
   const browserRules = decodeAliasCookie(request.cookies.get(ALIAS_COOKIE_NAME)?.value);
