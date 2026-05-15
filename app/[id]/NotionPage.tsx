@@ -1394,19 +1394,113 @@ export default function NotionPage({
   }, [darkMode]);
 
   useEffect(() => {
-    if (!window.location.hash) {
-      return;
-    }
+    const openParentToggles = (target: HTMLElement) => {
+      let parent = target.parentElement;
 
-    const restoreTop = () => window.scrollTo({ left: 0, top: 0 });
-    restoreTop();
+      while (parent) {
+        if (parent.tagName === 'DETAILS') {
+          parent.setAttribute('open', '');
+        }
 
+        parent = parent.parentElement;
+      }
+    };
+    const getScrollParent = (target: HTMLElement) => {
+      let parent = target.parentElement;
+
+      while (parent) {
+        const style = window.getComputedStyle(parent);
+        const overflowY = style.overflowY;
+        const canScroll =
+          (overflowY === 'auto' || overflowY === 'scroll') &&
+          parent.scrollHeight > parent.clientHeight;
+
+        if (canScroll) {
+          return parent;
+        }
+
+        parent = parent.parentElement;
+      }
+
+      return null;
+    };
+    const getHashTarget = (hash: string) => {
+      const decodedHash = decodeURIComponent(hash);
+      const candidates = Array.from(new Set([decodedHash, decodedHash.replace(/-/g, '')]));
+
+      for (const candidate of candidates) {
+        const attributeId = candidate.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const selectorId = window.CSS?.escape(candidate) || attributeId;
+        const target =
+          document.querySelector(`[data-id="${attributeId}"]`) ||
+          document.querySelector(`.notion-block-${selectorId}`) ||
+          document.getElementById(candidate);
+
+        if (target instanceof HTMLElement) {
+          return target;
+        }
+      }
+
+      return null;
+    };
+    const scrollTargetIntoView = (target: HTMLElement) => {
+      const offset = 72;
+      const scrollParent = getScrollParent(target);
+
+      openParentToggles(target);
+
+      if (scrollParent) {
+        scrollParent.scrollTo({
+          left: 0,
+          top: Math.max(
+            0,
+            scrollParent.scrollTop +
+              target.getBoundingClientRect().top -
+              scrollParent.getBoundingClientRect().top -
+              offset
+          )
+        });
+        return;
+      }
+
+      window.scrollTo({
+        left: 0,
+        top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset)
+      });
+    };
+    const scrollToHashTarget = () => {
+      const hash = window.location.hash.slice(1);
+
+      if (!hash) {
+        return;
+      }
+
+      const target = getHashTarget(hash);
+
+      if (!target) {
+        return;
+      }
+
+      scrollTargetIntoView(target);
+    };
+    const onHashChange = () => {
+      window.setTimeout(scrollToHashTarget, 0);
+    };
     const timers = [
-      window.setTimeout(restoreTop, 150),
-      window.setTimeout(restoreTop, 700)
+      window.setTimeout(scrollToHashTarget, 80),
+      window.setTimeout(scrollToHashTarget, 300),
+      window.setTimeout(scrollToHashTarget, 900),
+      window.setTimeout(scrollToHashTarget, 1800),
+      window.setTimeout(scrollToHashTarget, 3000)
     ];
 
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
+    scrollToHashTarget();
+    window.addEventListener('hashchange', onHashChange);
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      window.removeEventListener('hashchange', onHashChange);
+    };
   }, [rootPageId]);
 
   const onToggleTheme = () => {
