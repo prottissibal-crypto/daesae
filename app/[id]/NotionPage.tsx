@@ -1424,27 +1424,129 @@ export default function NotionPage({
 
       return null;
     };
+    const getTopOffset = () => {
+      const header = document.querySelector<HTMLElement>('.notion-header');
+      const notice = document.querySelector<HTMLElement>('.notion-notice-stack');
+      const headerRect = header?.getBoundingClientRect();
+      const noticeRect = notice?.getBoundingClientRect();
+      const noticeStyle = notice ? window.getComputedStyle(notice) : null;
+      const stickyNoticeHeight =
+        noticeRect &&
+        noticeStyle &&
+        (noticeStyle.position === 'fixed' || noticeStyle.position === 'sticky') &&
+        noticeRect.bottom > 0
+          ? noticeRect.height
+          : 0;
+      const headerHeight = headerRect && headerRect.bottom > 0 ? headerRect.height : 0;
+
+      return Math.ceil(Math.max(72, headerHeight + stickyNoticeHeight + 16));
+    };
+    const safeDecodeHash = (hash: string) => {
+      try {
+        return decodeURIComponent(hash);
+      } catch {
+        return hash;
+      }
+    };
+    const queryElement = (selector: string) => {
+      try {
+        const element = document.querySelector(selector);
+
+        return element instanceof HTMLElement ? element : null;
+      } catch {
+        return null;
+      }
+    };
+    const hyphenateNotionId = (value: string) => {
+      const normalizedValue = value.replace(/-/g, '').toLowerCase();
+
+      if (!/^[0-9a-f]{32}$/.test(normalizedValue)) {
+        return undefined;
+      }
+
+      return [
+        normalizedValue.slice(0, 8),
+        normalizedValue.slice(8, 12),
+        normalizedValue.slice(12, 16),
+        normalizedValue.slice(16, 20),
+        normalizedValue.slice(20)
+      ].join('-');
+    };
+    const getHashCandidates = (hash: string) => {
+      const decodedHash = safeDecodeHash(hash).trim();
+      const hashWithoutQuery = decodedHash.split('?')[0];
+      const baseCandidates = [decodedHash, hashWithoutQuery].filter(Boolean);
+      const candidates = baseCandidates.flatMap((candidate) => {
+        const compactId = candidate.replace(/-/g, '');
+        const hyphenatedId = hyphenateNotionId(candidate);
+
+        return [candidate, compactId, hyphenatedId].filter(Boolean) as string[];
+      });
+
+      return Array.from(new Set(candidates));
+    };
+    const getLinkedHashTarget = (candidate: string) => {
+      const compactCandidate = candidate.replace(/-/g, '').toLowerCase();
+
+      if (!compactCandidate) {
+        return null;
+      }
+
+      const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'));
+      const link = links.find((item) => {
+        const href = item.getAttribute('href') || '';
+        const [hrefWithoutHash] = href.split('#');
+        const hrefHash = href.includes('#') ? href.split('#').pop() || '' : '';
+        const normalizedHref = hrefWithoutHash.split('?')[0].replace(/-/g, '').toLowerCase();
+        const normalizedHash = safeDecodeHash(hrefHash).replace(/-/g, '').toLowerCase();
+
+        return (
+          normalizedHash === compactCandidate ||
+          normalizedHref.endsWith(`/${compactCandidate}`) ||
+          normalizedHref.endsWith(compactCandidate)
+        );
+      });
+
+      if (!link) {
+        return null;
+      }
+
+      const collectionTarget = link.closest<HTMLElement>(
+        '.notion-table-row, .notion-collection-card, .notion-collection-row, .notion-page-link'
+      );
+
+      return collectionTarget || link;
+    };
     const getHashTarget = (hash: string) => {
-      const decodedHash = decodeURIComponent(hash);
-      const candidates = Array.from(new Set([decodedHash, decodedHash.replace(/-/g, '')]));
+      const candidates = getHashCandidates(hash);
 
       for (const candidate of candidates) {
         const attributeId = candidate.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         const selectorId = window.CSS?.escape(candidate) || attributeId;
         const target =
-          document.querySelector(`[data-id="${attributeId}"]`) ||
-          document.querySelector(`.notion-block-${selectorId}`) ||
+          queryElement(`[data-id="${attributeId}"]`) ||
+          queryElement(`[data-block-id="${attributeId}"]`) ||
+          queryElement(`[data-record-id="${attributeId}"]`) ||
+          queryElement(`[data-row-id="${attributeId}"]`) ||
+          queryElement(`.notion-block-${selectorId}`) ||
+          queryElement(`.${selectorId}`) ||
           document.getElementById(candidate);
 
         if (target instanceof HTMLElement) {
           return target;
+        }
+
+        const linkedTarget = getLinkedHashTarget(candidate);
+
+        if (linkedTarget) {
+          return linkedTarget;
         }
       }
 
       return null;
     };
     const scrollTargetIntoView = (target: HTMLElement) => {
-      const offset = 72;
+      const offset = getTopOffset();
       const scrollParent = getScrollParent(target);
 
       openParentToggles(target);
