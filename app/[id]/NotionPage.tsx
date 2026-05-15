@@ -1574,33 +1574,105 @@ export default function NotionPage({
       const hash = window.location.hash.slice(1);
 
       if (!hash) {
-        return;
+        return false;
       }
 
       const target = getHashTarget(hash);
 
       if (!target) {
-        return;
+        return false;
       }
 
       scrollTargetIntoView(target);
+      return true;
+    };
+    const timers: number[] = [];
+    let hashTargetObserver: MutationObserver | null = null;
+    let observerTimeout: number | undefined;
+    let scheduledObserverFrame: number | undefined;
+
+    const stopObservingHashTarget = () => {
+      hashTargetObserver?.disconnect();
+      hashTargetObserver = null;
+
+      if (observerTimeout !== undefined) {
+        window.clearTimeout(observerTimeout);
+        observerTimeout = undefined;
+      }
+
+      if (scheduledObserverFrame !== undefined) {
+        window.cancelAnimationFrame(scheduledObserverFrame);
+        scheduledObserverFrame = undefined;
+      }
+    };
+    const scheduleObservedHashScroll = () => {
+      if (scheduledObserverFrame !== undefined) {
+        return;
+      }
+
+      scheduledObserverFrame = window.requestAnimationFrame(() => {
+        scheduledObserverFrame = undefined;
+
+        if (scrollToHashTarget()) {
+          stopObservingHashTarget();
+          timers.push(window.setTimeout(scrollToHashTarget, 250));
+          timers.push(window.setTimeout(scrollToHashTarget, 1000));
+        }
+      });
+    };
+    const startObservingHashTarget = () => {
+      stopObservingHashTarget();
+
+      if (!window.location.hash || !document.body || !window.MutationObserver) {
+        return;
+      }
+
+      hashTargetObserver = new MutationObserver(scheduleObservedHashScroll);
+      hashTargetObserver.observe(document.body, {
+        attributeFilter: [
+          'class',
+          'data-block-id',
+          'data-id',
+          'data-record-id',
+          'data-row-id',
+          'href',
+          'id',
+          'open'
+        ],
+        attributes: true,
+        childList: true,
+        subtree: true
+      });
+      observerTimeout = window.setTimeout(stopObservingHashTarget, 15000);
     };
     const onHashChange = () => {
-      window.setTimeout(scrollToHashTarget, 0);
+      stopObservingHashTarget();
+      window.setTimeout(() => {
+        if (!scrollToHashTarget()) {
+          startObservingHashTarget();
+        }
+      }, 0);
     };
-    const timers = [
-      window.setTimeout(scrollToHashTarget, 80),
-      window.setTimeout(scrollToHashTarget, 300),
-      window.setTimeout(scrollToHashTarget, 900),
-      window.setTimeout(scrollToHashTarget, 1800),
-      window.setTimeout(scrollToHashTarget, 3000)
-    ];
+    const queueHashScroll = (delay: number) => {
+      timers.push(
+        window.setTimeout(() => {
+          if (scrollToHashTarget()) {
+            stopObservingHashTarget();
+          }
+        }, delay)
+      );
+    };
 
-    scrollToHashTarget();
+    if (!scrollToHashTarget()) {
+      startObservingHashTarget();
+    }
+
+    [80, 300, 900, 1800, 3000].forEach(queueHashScroll);
     window.addEventListener('hashchange', onHashChange);
 
     return () => {
       timers.forEach((timer) => window.clearTimeout(timer));
+      stopObservingHashTarget();
       window.removeEventListener('hashchange', onHashChange);
     };
   }, [rootPageId]);
