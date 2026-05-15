@@ -1,0 +1,178 @@
+.page {
+  background: #f4f6f2;
+  color: #1d2528;
+  font-family:
+    Pretendard,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  min-height: 100vh;
+  padding: 32px 20px 56px;
+}
+
+.shell {
+  margin: 0 auto;
+  max-width: 1080px;
+  width: 100%;
+}
+
+.header {
+  align-items: flex-start;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 42px;
+  line-height: 1.08;
+  margin: 0;
+}
+
+.header p:not(.kicker) {
+  color: #536064;
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 14px 0 0;
+  max-width: 680px;
+}
+
+.kicker {
+  color: #f27721;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.homeLink,
+.secondaryButton {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(29, 37, 40, 0.16);
+  border-radius: 6px;
+  color: #1d2528;
+  display: inline-flex;
+  font-size: 15px;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.secondaryButton {
+  background: #1d2528;
+  color: #fffaf2;
+}
+
+.notice,
+.panel,
+.checklist {
+  background: #fff;
+  border: 1px solid rgba(29, 37, 40, 0.12);
+  border-radius: 8px;
+}
+
+.notice {
+  border-left: 4px solid #f27721;
+  margin-bottom: 18px;
+  padding: 16px 18px;
+}
+
+.notice strong {
+  display: block;
+  font-size: 17px;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.notice p {
+  color: #536064;
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel {
+  padding: 22px;
+}
+
+.panel h2,
+.checklist h2 {
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.panel ul,
+.checklist ol {
+  color: #536064;
+  display: grid;
+  font-size: 15px;
+  gap: 10px;
+  line-height: 1.65;
+  margin: 16px 0 0;
+  padding-left: 20px;
+}
+
+.panel li,
+.checklist li {
+  padding-left: 2px;
+}
+
+.checklist {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  margin-top: 18px;
+  padding: 24px;
+}
+
+.checklist ol {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 24px 14px 42px;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .header h1 {
+    font-size: 34px;
+  }
+
+  .headerActions,
+  .homeLink,
+  .secondaryButton {
+    width: 100%;
+  }
+
+  .grid,
+  .checklist {
+    grid-template-columns: 1fr;
+  }
+}

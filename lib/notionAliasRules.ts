@@ -11,6 +11,7 @@ const RESERVED_ALIASES = new Set([
   'apple-icon',
   'daesae-logo',
   'favicon',
+  'help',
   'icon',
   'manifest',
   'naver-blog',

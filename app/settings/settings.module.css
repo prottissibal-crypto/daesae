@@ -27,6 +27,13 @@
   margin-bottom: 24px;
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .kicker {
   color: #f27721;
   font-size: 13px;
@@ -445,6 +452,10 @@
   .header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .headerActions {
+    width: 100%;
   }
 
   .panel {

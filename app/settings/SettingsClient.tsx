@@ -311,9 +311,14 @@ export default function SettingsClient() {
             <p className={styles.kicker}>대세영어학원</p>
             <h1>사이트 설정</h1>
           </div>
-          <a className={styles.homeLink} href="/">
-            홈
-          </a>
+          <div className={styles.headerActions}>
+            <a className={styles.homeLink} href="/help">
+              도움말
+            </a>
+            <a className={styles.homeLink} href="/">
+              홈
+            </a>
+          </div>
         </header>
 
         <section className={styles.panel}>
