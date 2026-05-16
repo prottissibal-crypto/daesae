@@ -151,11 +151,11 @@ main {
 .notion-viewer .notion-collection-view-tabs-row {
   max-width: 100%;
   min-width: 0;
+  width: 100%;
 }
 
 .notion-viewer .notion-board,
-.notion-viewer .notion-gallery-view,
-.notion-viewer .notion-table-view {
+.notion-viewer .notion-gallery-view {
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -172,18 +172,34 @@ main {
 }
 
 .notion-viewer .notion-table {
-  max-width: 100%;
-  width: 100%;
+  align-self: center;
+  margin-left: calc((100% - 100vw) / 2);
+  margin-right: calc((100% - 100vw) / 2);
+  max-width: 100vw;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  width: 100vw;
 }
 
-.notion-viewer .notion-table-view,
+.notion-viewer .notion-table-view {
+  --notion-table-offset: clamp(16px, calc((100vw - 1216px) / 2), 96px);
+  float: left;
+  max-width: none;
+  min-width: max-content;
+  overflow: visible;
+  padding-left: max(var(--notion-table-offset), env(safe-area-inset-left)) !important;
+  padding-right: max(16px, env(safe-area-inset-right)) !important;
+  width: max-content;
+}
+
 .notion-viewer .notion-table-header,
 .notion-viewer .notion-table-header-inner,
 .notion-viewer .notion-table-body {
   min-width: max-content;
-}
-
-.notion-viewer .notion-table-header-inner {
   width: max-content;
 }
 
