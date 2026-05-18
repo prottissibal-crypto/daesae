@@ -7,7 +7,7 @@ import { ALIAS_COOKIE_NAME, resolveNotionPageIdFromPath } from '../../lib/notion
 import { NOTICE_COOKIE_NAME, getActiveNoticeList, type Notice } from '../../lib/notices';
 import NotionPage from './NotionPage';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 const MAX_ALIAS_RESOLVE_DEPTH = 2;
 const MAX_ALIAS_TARGETS_PER_DEPTH = 20;
